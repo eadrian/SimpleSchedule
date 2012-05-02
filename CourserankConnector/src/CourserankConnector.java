@@ -33,7 +33,9 @@ import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import org.apache.http.HttpEntity;
@@ -63,7 +65,7 @@ public class CourserankConnector {
     	
     	//MaxentTagger tagger = new MaxentTagger("models/english-left3words-distsim.tagger");
     	///
-    	
+    	ImportData importCourse = new ImportData();
         HttpClient httpclient = new DefaultHttpClient();
         httpclient = WebClientDevWrapper.wrapClient(httpclient);
         try {
@@ -268,6 +270,9 @@ public class CourserankConnector {
                 for (int j = 0; j<deptCourses.size(); j++) {
                 	Course c = deptCourses.get(j);
                 	System.out.println(""+c.courseTitle+" : "+c.rating);
+                	importCourse.writeCourse("A-", c.courseTitle, "descr", "CS", "Programming Abstractions",
+							 "Zelenski", "Gates 100", "10", "5", ""+c.rating, "11:00 AM - 12:15 PM", "Mon, Wed, Fri",
+							 "Aut, Spr", "GER:DBHum, GER:ECGender", "tag1, tag2, tag3");
                 	//System.out.println(tagger.tagString(c.title));
                 }
             	
@@ -646,9 +651,9 @@ public class CourserankConnector {
 						try {
 							String[] nameParts = CODE.split(" ");
 			    			int num = Integer.parseInt(nameParts[1]);
-			    			if (num > 299) {
+			    			/*if (num > 299) {
 			        			next = false;
-			        		}
+			        		}*/
 			    		} catch (NumberFormatException e) {
 			    			
 			    		}
@@ -701,12 +706,17 @@ public class CourserankConnector {
     	String token = str.substring(index, index+str.substring(index).indexOf(end));
     	return token.trim();
     }
+	
+	
     
     public static List<Course> processResultPage(String page) {
+    	
     	String[] cresults = page.split("class=\"searchResult");
     	List<Course> results = new ArrayList<Course>();
     	for (int i=1; i<cresults.length; i++) {
     		String cresult = cresults[i];
+    		//System.out.println(cresult);
+    		
     		String cname = getToken(cresult, "courseNumber\">", ":<");
     		cname.trim();
     		
@@ -722,7 +732,63 @@ public class CourserankConnector {
     		}
     		
     		String ctitle = getToken(cresult, "courseTitle\">", "</");
+    		
     		String cdesc = getToken(cresult, "courseDescription\">", "</div");
+    		boolean FreshSem = cdesc.contains("Preference to freshmen");
+    	    boolean SophSem = cdesc.contains("Preference to sophomores");
+    	    /*
+    	    if (cdesc.contains("Prerequisites:")) {
+    	    	String prereqs = cdesc.substring(cdesc.indexOf("Prerequisites:"));
+    	    	StringTokenizer st = new StringTokenizer(prereqs," ,;",false);
+    	    	List<String> tokens = new ArrayList<String>();
+    	        while (st.hasMoreTokens()) {
+    	        	String token = st.nextToken();
+    	            tokens.add(token);
+    	            char c = token.charAt(0);
+    	            if (Character.isDigit(c)) {
+    	            	
+    	            }
+    	        }
+    	        
+    	    }
+    	    */
+    	    boolean sem = cresult.contains("| SEM");
+    		List<String> profs = new ArrayList<String>();
+    		List<Boolean> starred = new ArrayList();
+    		int sindex  = 0;
+    		while (true) {
+    			boolean star = false;
+    			String Patt = "instructorLink\">";
+    	    	int index = cresult.indexOf(Patt, sindex);
+    	    	
+    	    	
+    	    	if (index == -1)
+    	    		break;
+    	    	
+    	    	String starFile = "gold-star.jpg";
+    	    	
+    	    	
+    	    	sindex = index+1;
+    	    	index += Patt.length();
+    	    	String token = cresult.substring(index, index+cresult.substring(index).indexOf("</"));
+    	    	if (token.contains(starFile)) {
+    	    		token = getToken(token, "16px;\" />", ")")+")";
+    	    		star = true;
+    	    	}
+    	    	if (star)
+    	    		System.out.println(token);
+    	    	profs.add(token);
+    	    	starred.add(star);
+    	    	
+    		}
+    		courseSchedule cs = getSchedule(cresult);
+    		if (cs.quarters.size() == 0)
+    			continue;
+    		for (int x=0; x<cs.quarters.size(); x++) {
+    			/*System.out.println(cs.quarters.get(x)+" "+cs.times.get(x));
+    			System.out.println(cs.numbers.get(x));
+    			System.out.println(cs.profs.get(x));*/
+    		}
     		Course c = new Course();
     		c.courseTitle = cname;
     		c.courseNumber = num;
@@ -737,6 +803,57 @@ public class CourserankConnector {
     	
     	
     }
+    
+    static int YEAR = 2012;
+
+	private static courseSchedule getSchedule(String cresult) {
+		courseSchedule cs = new courseSchedule();
+		String[] termInfo = cresult.split("class=\"sectionContainerTerm");
+		for (int i=1; i < termInfo.length; i++) {
+			String info = termInfo[i];
+			String term = "";
+			String year = "";
+			if (info.contains(YEAR+" Autumn")) {
+				term = "Autumn";
+				year = ""+(YEAR-1);
+			} else if (info.contains(YEAR+" Winter")) {
+				term = "Winter";
+				year = ""+YEAR;
+			} else if (info.contains(YEAR+" Spring")) {
+				term = "Spring";
+				year = ""+YEAR;
+			} else if (info.contains(YEAR+" Summer")) {
+				term = "Summer";
+				year = ""+YEAR;
+			}
+			
+			String number = getToken(info, "Class #", "|");
+			String[] times = info.split("/"+year+" - (\\d){2}/(\\d){2}/"+year);
+			if (times.length == 1) {
+				continue;
+			}
+			int endindex = (times[1].indexOf("AM") < times[1].indexOf("PM") && times[1].indexOf("AM")>-1) ? times[1].indexOf("AM") : times[1].indexOf("PM");
+			endindex += 2;
+			
+			if (endindex == -1) {
+				//System.out.println(cresult);
+				System.out.println(times[1]);
+			}
+			String time = times[1].substring(0, endindex);
+			
+			
+			
+			String professors = getToken(info, "Instructors: </span>", "<");
+			String[] profs = professors.split(";");
+			List<String> teachers = Arrays.asList(profs);
+			cs.quarters.add(term);
+			cs.numbers.add(number);
+			cs.times.add(time);
+			cs.profs.add(teachers);
+			
+		}
+		return cs;
+	}
     
     
 }
