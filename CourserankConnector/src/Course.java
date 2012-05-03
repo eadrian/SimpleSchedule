@@ -26,6 +26,10 @@ public class Course {
 	public double rating;	
 	public float score; 		// may or may not be necessary
 	public String timeBlock;
+	public boolean seminar;
+	public boolean Fsem;
+	public boolean Ssem;
+	
 	//private Set<String> tags;
 	
 	/* Construct new course instance to add to database */
