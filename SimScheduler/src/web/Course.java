@@ -1,132 +1,150 @@
 package web;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Course {
 
 	public static final DBConnection dbc = new DBConnection();
 	public static Object dbLock = new Object();
 	
-	public enum Grade { A, B, C, D, F, CR, NCR, I }	
-	public enum Quarter { AUT, WIN, SPR, SUM }	
-	public enum Day { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY }
-	public enum UGReq { DBEngrAppSci, DBHum, DBMath, DBNatSci, DBSocSci, ECAmerCul, ECEthnicReas, ECGender, ECGlobalCom }
-	private long ID;
+	/* Stored in db Course table */
+	public int ID; 			// same as classNum
+	public String avgGrade;
+	public String code; 		// ex: CS161
+	public int deptID;
+	public String description;
+	public String grading;
+	public String title;   		// ex: Introduction to Algorithms
+	public String lectureDays; 	// ex: Mon, Wed, Fri represented as '10101'
+	public int numReviews;
+	public int numUnits;	
+	public double rating;	
+	public String tags;
+	public int timeBegin;
+	public int timeEnd;
+	public String type;
+	public int workload;
 	
-	/* Alphabetical ordered */
-	private String avgGrade;
-	private String courseTitle; // ex: CS161
-	private String description;
-	private long deptID;
-	private String fullTitle;   // ex: Introduction to Algorithms
-	private String lectureDays; // ex: Mon, Wed, Fri
-	private String lecturer;
-	private String location;    // adding this in anyway
-	private int numReviews;
-	private int numUnits;	
-	private double rating;	
-	private float score; 		// may or may not be necessary
-	private String timeBlock;
-	//private Set<String> tags;
+	/* Stored in other tables */
+	public List<String> lecturers; // names of lecturers
+	public List<String> prereqs; // strings of course name "CS109"
+	public List<String> universityReqs; // "GER:Ethics"
 	
-	/* Construct new course instance to add to database */
-	public Course(String avgGrade, String courseTitle, String description, long deptID, 
-				  String fullTitle, String lectureDays, String lecturer, String location, 
-				  int numReviews, int numUnits, double rating, String timeBlock ) {
-
+	
+	/* Construct new course instance */
+	public Course(int classNum, String avgGrade, String code, String description, int deptID, 
+				  String fullTitle, String grading, String lectureDays, 
+				  int numReviews, int numUnits, double rating, int timeBegin, int timeEnd, 
+				  String tags, String type, int workload) {
+		this.ID = classNum;		
 		this.avgGrade = avgGrade;
-		this.courseTitle = courseTitle;
+		this.code = code;
 		this.deptID = deptID;
 		this.description = description;
-		this.fullTitle = fullTitle;
+		this.grading = grading;
+		this.title = fullTitle;
 		this.lectureDays = lectureDays;
-		this.lecturer = lecturer;
-		this.location = location;
 		this.numReviews = numReviews;
 		this.numUnits = numUnits;
 		this.rating = rating;
-		this.score = -1; // init to -1 for now
-		this.timeBlock = timeBlock;
-		
-		this.ID = addToDatabase();
-		
+		this.tags = tags;		
+		this.timeBegin = timeBegin;
+		this.timeEnd = timeEnd;
+		this.type = type;
+		this.workload = workload;
 	}
 	
 	/* Construct a course instance from an existing one in database */
-	public Course(long id) {
+	public Course(int id) {
 		this.avgGrade = dbc.getCourseAttribute(id, "avgGrade");
-		this.courseTitle = dbc.getCourseAttribute(id, "courseTitle");
-		this.description = dbc.getCourseAttribute(id, "description");
+		this.code = dbc.getCourseAttribute(id, "code");
 		this.deptID = Integer.parseInt(dbc.getCourseAttribute(id, "deptID"));
-		this.fullTitle = dbc.getCourseAttribute(id, "fullTitle");
+		this.description = dbc.getCourseAttribute(id, "description");
+		this.grading = dbc.getCourseAttribute(id, "grading");
+		this.title = dbc.getCourseAttribute(id, "title");
 		this.lectureDays = dbc.getCourseAttribute(id, "lectureDays");
-		this.lecturer = dbc.getCourseAttribute(id, "lecturer");
-		this.location = dbc.getCourseAttribute(id, "location");	
 		this.numReviews = Integer.parseInt(dbc.getCourseAttribute(id, "numReviews"));
 		this.numUnits = Integer.parseInt(dbc.getCourseAttribute(id, "numUnits"));	
-		this.rating = Integer.parseInt(dbc.getCourseAttribute(id, "rating"));
-		this.score = Integer.parseInt(dbc.getCourseAttribute(id, "score"));
-		this.timeBlock = dbc.getCourseAttribute(id, "timeBlock");
+		this.rating = Float.parseFloat(dbc.getCourseAttribute(id, "rating"));
+		this.tags = dbc.getCourseAttribute(id, "tags");
+		this.timeBegin = Integer.parseInt(dbc.getCourseAttribute(id, "timeBegin"));
+		this.timeEnd = Integer.parseInt(dbc.getCourseAttribute(id, "timeEnd"));	
+		this.type = dbc.getCourseAttribute(id, "type");
+		this.workload = Integer.parseInt(dbc.getCourseAttribute(id, "workload"));
+	}
+
+	public Course() {
+		
 	}
 	
-	public long getID() {
-		return ID;
-	}
-	public String getDepartment() {
-		return dbc.getDepartmentAttribute(deptID, "name");
-	}
-	public String getDescription() {
-		return description;
-	}
-	public String getLectureDays() {
-		return lectureDays;
-	}
-	public String getLecturer() {
-		return lecturer;
-	}
-	public String getLocation() {
-		return location;
-	}
-	public int getNumUnits() {
-		return numUnits;
-	}
-	public String getAvgGrade() {
-		return avgGrade;
-	}
-	public int getNumReviews() {
-		return numReviews;
-	}
-	public double getRating() {
-		return rating;
-	}
-	public float getScore() {
-		return score;
-	}
-	public String getTimeBlock() {
-		return timeBlock;
+	public List<String> getLecturers() {
+		List<Integer> listOfLecturersIDs = dbc.getJunctionIDs("rhun_lecturer_course", ID, "courseID", "lecturerID");
+
+		List<String> attributes = new ArrayList<String>();
+		for (int ID : listOfLecturersIDs) {
+			attributes.add(dbc.getAttribute("rhun_lecturers", ID, "name"));
+		}
+		return attributes;
+		//return dbc.getAttributes("rhun_lecturers", listOfLecturersIDs, "name");		
 	}
 	
-	public long addToDatabase() {
+	// writes course object to the Course Table. If there's already a row for it,
+	// it overwrites the values.
+	public void writeToDatabase() {
 		String sep = "\", \"";		
+		/*
 		long id = 0;
 		synchronized(dbLock) {
 			id = dbc.getNextID("rhun_courses"); // gets count of existing courses
+		}*/
+		String query = "";
+		if (dbc.exists("rhun_courses", ID)) {
+			sep = "\", ";						// if already exists, update the row
+			query = "UPDATE rhun_courses SET " +
+					"avgGrade = \"" + avgGrade + sep + 
+					"code = \"" + code + sep + 
+					"deptID = \"" + deptID + sep + 
+					"description = \"" + description + sep + 
+					"grading = \"" + grading + sep + 
+					"title = \"" + title + sep + 
+					"lectureDays = \"" + lectureDays + sep + 
+					"numReviews = \"" + numReviews + sep + 
+					"numUnits = \"" + numUnits + sep + 
+					"rating = \"" + rating + sep + 
+					"tags = \"" + tags + sep + 
+					"timeBegin = \"" + timeBegin + sep +
+					"timeEnd = \"" + timeEnd + sep + 
+					"type = \"" + type + sep +
+					"workload = \"" + workload + "\" " +
+					"WHERE ID=" + ID + ";";
+		} else {								// if doesn't exist, insert into database
+			query = "INSERT INTO rhun_courses VALUES (" + ID + ", \"" + 
+					avgGrade + sep + 
+					code + sep + 
+					deptID + sep + 
+					description + sep + 
+					grading + sep + 
+					title + sep + 
+					lectureDays + sep + 
+					numReviews + sep + 
+					numUnits + sep + 
+					rating + sep + 
+					tags + sep + 
+					timeBegin + sep +
+					timeEnd + sep + 
+					type + sep +
+					workload + "\")";
 		}
-		String query = "INSERT INTO rhun_courses VALUES (" + id + ", \"" + 
-						avgGrade + sep + 
-						courseTitle + sep + 
-						deptID + sep + 
-						description + sep + 
-						fullTitle + sep + 
-						lectureDays + sep + 
-						lecturer + sep + 
-						location + sep + 
-						numReviews + sep + 
-						numUnits + sep + 
-						rating + sep + 
-						score + sep + 
-						timeBlock + "\")";
 		dbc.update(query);
-		
-		return id;	
+	}
+	
+	public boolean equals(Object other){
+	    if (other == null) return false;
+	    if (other == this) return true;
+	    if (!(other instanceof Course))return false;
+	    Course otherCourse = (Course)other;
+	    return otherCourse.code.equals(this.code);
 	}
 	
 }
