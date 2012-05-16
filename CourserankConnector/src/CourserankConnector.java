@@ -291,7 +291,7 @@ public class CourserankConnector {
                 	Course c = deptCourses.get(j);
                 	System.out.println(""+c.title+" : "+c.rating);
                 	c.tags = name;
-                	
+                	c.code = c.code.trim();
                 	c.department = name;
                 	c.deptAB = abbr;
                 	c.writeToDatabase();
@@ -617,7 +617,7 @@ public class CourserankConnector {
 					String CID = getToken(str, "course?id=","\">");
 					
 					// CODE 
-					String CODE = getToken(str,"class=\"code\">" ,":</");
+					String CODE = getToken(str,"class=\"code\">" ,":</").trim();
 					
 					//TITLE 
 					String NAME = getToken(str, "class=\"title\">","</");
@@ -636,7 +636,7 @@ public class CourserankConnector {
 					String WLOAD = getToken(str, "Workload:", "|");
 					
 					//GER
-					String GER = getToken(str, "GERs:", "</d");
+					String GER = getToken(str, "GERs:", "</d").trim();
 					
 					//RATING
 					//Construct rating based on number of star images
@@ -1078,6 +1078,9 @@ public class CourserankConnector {
 				grading+="Credit/No Credit";
 			}
 			String[] profs = professors.split(";");
+			for (int j=0; j<profs.length; j++) {
+				profs[j] = profs[j].trim();
+			}
 			List<String> teachers = Arrays.asList(profs);
 			if (info.indexOf(" unit")==-1)
 				continue;

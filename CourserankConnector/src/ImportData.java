@@ -20,7 +20,7 @@ public class ImportData {
 				     lecturers, numReviews, numUnits, rating, timeBeginStr, timeEndStr, lectureDays, 
 				     universityReqs, tags, type, workloadStr);
 		//importLecturers(classNumStr, lecturers); 		// lecturers will be a comma separated list of lecturers
-		importUnivReqs(classNumStr, universityReqs);   // universityReqs will be a comma separated string like "GER: Hum, GER: Math"
+		//importUnivReqs(classNumStr, universityReqs);   // universityReqs will be a comma separated string like "GER: Hum, GER: Math"
 
 		System.out.println("Input stored.");
 		
@@ -90,31 +90,37 @@ public class ImportData {
 			}
 			long ID = dbc.getID("rhun_lecturers", "name", lecturerName);// check if lecturer already exists
 			if (ID < 0) { 												// if not add to lecturer table
-				/*ID = dbc.getNextID("rhun_lecturers");
+				ID = dbc.getNextID("rhun_lecturers");
+				if (star==0) {
 				dbc.update("INSERT INTO rhun_lecturers VALUES (" + ID + ", \"" + 
-						lecturerName + "\", 0, 0, 1);");*/
-			} else {													// increment numCourses count
-				/*dbc.update("UPDATE rhun_lecturers SET numCourses=numCourses+1 WHERE " +
-						"name=\"" + lecturerName + "\"");*/
-				if (star==1) {
+						lecturerName + "\", 0, 0, 0, 1);");
+				} else {
 					System.out.println("updating Star");
-					dbc.update("UPDATE rhun_lecturers SET star=1 WHERE " +
-							"name=\"" + lecturerName + "\"");
+					dbc.update("INSERT INTO rhun_lecturers VALUES (" + ID + ", \"" + 
+							lecturerName + "\", 1, 0, 0, 1);");
 				}
-				dbc.update("UPDATE rhun_lecturer_course SET quarter='"+quarter+"' WHERE lecturerID="+ID+" AND courseID="+classNum);
+			} else {													// increment numCourses count
+				dbc.update("UPDATE rhun_lecturers SET numCourses=numCourses+1 WHERE " +
+						"name=\"" + lecturerName + "\"");
+				
+				//dbc.update("UPDATE rhun_lecturer_course SET quarter='"+quarter+"' WHERE lecturerID="+ID+" AND courseID="+classNum);
 			}
-			//dbc.update("INSERT INTO rhun_lecturer_course VALUES(" + ID + ", " + classNum + ")");
+			dbc.update("INSERT INTO rhun_lecturer_course VALUES(" + ID + ", " + classNum + ", \"" + 
+					quarter + "\")");
+			//dbc.update("UPDATE rhun_lecturer_course SET quarter='"+quarter+"' WHERE lecturerID="+ID+" AND courseID="+classNum);
 		}
 	}
 	
-	public static void importUnivReqs (String classNum, String univReqsList) {
+	public static void importUnivReqs (String code,String classNum, String univReqsList) {
 		if (univReqsList.length()==0)
 			return;
 		String[] reqsFulfilled = univReqsList.split(",");
 		int size = reqsFulfilled.length;
 		for (int i = 0; i < size || i==0; i++) {	
 			int reqFulfilledID = dbc.getID("rhun_reqs", "name", reqsFulfilled[i].trim());	
-			dbc.update("INSERT INTO rhun_course_reqs VALUES (" + classNum + ", " + 
+			if (reqFulfilledID==-1)
+				continue;
+			dbc.update("INSERT INTO rhun_course_reqs VALUES (\""+code+"\"," + classNum + ", " + 
 						reqFulfilledID + ");");
 		}
 	}

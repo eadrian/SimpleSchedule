@@ -6,15 +6,15 @@ import java.util.*;
 public class DBConnection {
 
 
-	private static final String account = "ccs108elchen3";
-	private static final String password = "shaewaem";
-	private static final String server = "mysql-user.stanford.edu";
-	private static final String database = "c_cs108_elchen3";
+	private static final String account = "root";
+	private static final String password = "trespass";
+	private static final String server = "localhost";
+	public static final String database = "cdata";
 
-	private Connection con;
+	public Connection con;
 	public static final String sep = "\", \"";
 	
-	
+	//shaewaem
 	public DBConnection() {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -231,8 +231,49 @@ public class DBConnection {
 		}
 		return false;
 	}
-
 	
+	public List<List<AttrVal>> getAttributesThatMatch(String table, List<AttrVal> request, List<AttrVal> match) {
+		List<List<AttrVal>> results = new ArrayList<List<AttrVal>>();
+	    
+	    // Construct the query
+		String query = "SELECT * FROM " + table + " WHERE ";
+		String and = "";
+	    for (int i=0; i<match.size(); i++) {								// for each attr-value pair
+	        if (match.get(i).type.equals("String")) {
+	        	query += and + match.get(i).attr + " = '" + match.get(i).val + "' ";
+	        } else if (match.get(i).type.equals("int")|| match.get(i).type.equals("float")) {
+	        	query += and + match.get(i).attr + " = " + match.get(i).val + " ";
+	        }
+			and = "AND ";
+	    }
+	    
+	    // Query the database
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeQuery("USE " + database);
+			ResultSet rs = stmt.executeQuery(query);
+			while (rs.next()) {
+				results.add(new ArrayList<AttrVal>());
+				for (int i=0; i<request.size(); i++) {
+					AttrVal a = new AttrVal();
+					a.type = request.get(i).type;
+					a.attr = request.get(i).attr;
+					if (a.type.equals("String")) {
+						a.val = rs.getString(a.attr);
+					} else if (a.type.equals("int")) {
+						a.val = ""+rs.getInt(a.attr);
+					} else if (a.type.equals("float")) {
+						a.val = ""+rs.getFloat(a.attr);
+					}
+					results.get(results.size()-1).add(a);
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Was not able to retrieve ID");
+		}
+		return results;
+	}
 	
 }
 

@@ -174,12 +174,12 @@ public class Course {
 					timeEnd + sep + 
 					type + sep +
 					workload + sep +
-					0+ "\")";
+					0+sep+0+sep+0+sep+0+sep+0+ "\")";
 		}
-		//dbc.update(query);
+		dbc.update(query);
 		ImportData.importLecturers(""+ID, this.lecturers, quarter);
 		
-		//ImportData.importUnivReqs(""+ID, this.universityReqs);
+		ImportData.importUnivReqs(code, ""+ID, this.universityReqs);
 	}
 	
 	public boolean equals(Object other){
