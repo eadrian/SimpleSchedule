@@ -128,13 +128,15 @@ public class ImportData {
 	public static void importPrereqs (String classNum, String prereqsList) {		// prereqsList is like "CS109, EE108, ARTSTUD60"
 		String[] prereqs = prereqsList.split(", ");
 		int size = prereqs.length;
-		for (int i = 0; i < size; i++) {	
+		/*for (int i = 0; i < size; i++) {	
 			int prereqCourseID = dbc.getID("rhun_courses", "code", prereqs[i]);	
 			if (prereqCourseID > 0) {
 				dbc.update("INSERT INTO rhun_course_prereqs VALUES (" + classNum + ", " + 
 							prereqCourseID + ");");
 			}
-		}
+		}*/
+		dbc.update("INSERT INTO rhun_course_prereqs VALUES ('" + classNum + "', '" + 
+				prereqsList + "');");
 	}
 
 	public static void importUserData (String sunetID, String password, String name, String year, String major, 

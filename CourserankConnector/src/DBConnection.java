@@ -50,6 +50,38 @@ public class DBConnection {
 		update(query);
 	}
 	
+	public void updateAttributeWhere(String table, String attr, String val, String attrUp, String upVal) {
+		String query = "UPDATE " + table + " SET " + attrUp + " = " + upVal + " WHERE "+attr+"=" + val;
+		update(query);
+	
+	}
+	
+	public void updateAttributesWhere(String table, List<AttrVal> match, List<AttrVal> update) {
+		// Construct the query
+		String and = "";
+		String query = "UPDATE " + table + " SET ";
+		for (int i=0; i<update.size(); i++) {								// for each attr-value pair
+	        if (update.get(i).type.equals("String")) {
+	        	query += and + update.get(i).attr + " = '" + update.get(i).val + "' ";
+	        } else if (update.get(i).type.equals("int")|| update.get(i).type.equals("float")) {
+	        	query += and + update.get(i).attr + " = " + update.get(i).val + " ";
+	        }
+			and = ", ";
+	    }
+		
+		query+=" WHERE ";
+		and = "";
+	    for (int i=0; i<match.size(); i++) {								// for each attr-value pair
+	        if (match.get(i).type.equals("String")) {
+	        	query += and + match.get(i).attr + " = '" + match.get(i).val + "' ";
+	        } else if (match.get(i).type.equals("int")|| match.get(i).type.equals("float")) {
+	        	query += and + match.get(i).attr + " = " + match.get(i).val + " ";
+	        }
+			and = "AND ";
+	    }
+		update(query);    
+	}
+	
 	// given an ID, get an attribute value
 	// ex: get the title of the course with ID = 2
 	public String getAttribute(String table, int ID, String attribute) {
@@ -175,6 +207,8 @@ public class DBConnection {
 		return listCourses;		
 	}
 	
+	
+	
 	// get the next ID for a new object to be stored
 	public int getNextID(String table) {
 		try {
@@ -240,7 +274,10 @@ public class DBConnection {
 		String and = "";
 	    for (int i=0; i<match.size(); i++) {								// for each attr-value pair
 	        if (match.get(i).type.equals("String")) {
-	        	query += and + match.get(i).attr + " = '" + match.get(i).val + "' ";
+	        	if (!match.get(i).like)
+	        		query += and + match.get(i).attr + " = '" + match.get(i).val + "' ";
+	        	else 
+	        		query += and + match.get(i).attr + " LIKE '" + match.get(i).val + "' ";
 	        } else if (match.get(i).type.equals("int")|| match.get(i).type.equals("float")) {
 	        	query += and + match.get(i).attr + " = " + match.get(i).val + " ";
 	        }
@@ -248,6 +285,7 @@ public class DBConnection {
 	    }
 	    
 	    // Query the database
+	    System.err.println("Query: "+query);
 		try {
 			Statement stmt = con.createStatement();
 			stmt.executeQuery("USE " + database);

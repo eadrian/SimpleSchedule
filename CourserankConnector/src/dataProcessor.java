@@ -3,6 +3,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,7 +22,15 @@ public class dataProcessor {
 	private static DBConnection dbc;
 	public static Object dbLock;
 	public Set<String> explored;
-	
+	public static float DEFAULT_PROFESSOR_RATING = (float) 2.5;
+	public static float STAR_FACTOR = (float) 1.5;
+	public static int RATINGS_MINIMUM = 10;
+	public static int MIN_WLOAD = 100;
+	public static int MAX_WLOAD = 600;
+	public static float MAX_SCORE=100;
+	public static float REVIEWS_FACTOR = (float) .7;
+	public static float FREQ_FACTOR = (float) .3;
+	public static float PREREQ_FACTOR = (float) .4;
 	
 	public dataProcessor() {
 		dbc = new DBConnection();
@@ -34,14 +43,31 @@ public class dataProcessor {
 		List<String> depts = getDepartments();
 		List<String> cnames = new ArrayList<String>();
 		Map<String, List<String>> reqMap = new HashMap<String, List<String>>(500);
-		
+		Map<String, Integer> freq = new HashMap<String, Integer>(3000);
 		
 		
 		Map<String, Integer> reqCount = new TreeMap<String, Integer>();
 		ValueComparator bvc =  new ValueComparator(reqCount);
 		Map<String, Integer> sortedCount = new TreeMap<String, Integer>(bvc);
 		
+		
+		Map<String, Integer> wMap = new TreeMap<String, Integer>();
+		ValueComparator comp =  new ValueComparator(wMap);
+		Map<String, Integer> sortedWork = new TreeMap<String, Integer>(comp);
+		
+		//Map<String, Float> 
+		Map<String, Integer> revMap = new HashMap<String, Integer>();
+		
+		Map<String, Float> nScores = new HashMap<String, Float>();
 		//Get course codes
+		
+		float avgReviews = 0;
+		int totalCourses = 0;
+		int maxReviews = 0;
+		String maxCode = "";
+		
+		List<Integer> numRevs = new ArrayList<Integer>();
+		
 		Date start = new Date();
 		try {
 			Statement stmt = dbc.con.createStatement();
@@ -51,7 +77,24 @@ public class dataProcessor {
 			System.err.println("Time to get course result: "+(float)((latency.getTime()-start.getTime())/1000f));
 			int i=0;
 			while(rs.next() && i<1){
-				cnames.add(rs.getString("code").trim());
+				String name = rs.getString("code").trim();
+				cnames.add(name);
+				if (freq.containsKey(name)) {
+					freq.put(name, freq.get(name)+1);
+				} else {
+					freq.put(name, 1);
+				}
+				int revs = rs.getInt("numReviews");
+				avgReviews = (avgReviews*totalCourses+revs)/(totalCourses+1);
+				totalCourses++;
+				if (revs > maxReviews) {
+					maxReviews = revs;
+					maxCode = name;
+				}
+				numRevs.add(revs);
+				if (!revMap.containsKey(name))
+					revMap.put(name, revs);
+				
 			}
 			Date finish = new Date();
 			System.err.println("Time to iterate through courses: "+(float)((finish.getTime()-start.getTime())/1000f));
@@ -59,6 +102,14 @@ public class dataProcessor {
 			e.printStackTrace();
 			System.out.println("Unable to get course codes.");			
 		}
+		
+		System.out.println("Avg Reviews: "+avgReviews+ " MaxReviews: "+maxReviews+" for "+maxCode);
+		Collections.sort(numRevs);
+		System.out.println("Median Reviews: "+numRevs.get(numRevs.size()/2));
+		
+		
+		//Test Value Spreader on Reviews:
+		Map<String, Float> spreadRev = spreadValuesI(revMap);
 		
 		MaxentTagger tagger = null;
 		
@@ -78,12 +129,13 @@ public class dataProcessor {
 			stmt.executeQuery("USE " + dbc.database);
 			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_courses;" );
 			int i=0;
-			while(rs.next() && i<1){
+			while(rs.next()){
 				Course c = new Course(rs.getInt("ID"), rs.getString("avgGrade"), rs.getString("code").trim(), 
 											  rs.getString("description"), rs.getInt("deptID"), rs.getString("title"),
 											  rs.getString("grading"), rs.getString("lectureDays"), rs.getInt("numReviews"), 
 											  rs.getInt("numUnits"), rs.getDouble("rating"), rs.getInt("timeBegin"), 
 											  rs.getInt("timeEnd"), rs.getString("tags"), rs.getString("type"), rs.getInt("workload"));
+				c.quarter = rs.getString("quarter");
 				if (!cnames.contains(c.code)) {
 					cnames.add(c.code);
 				}
@@ -98,15 +150,143 @@ public class dataProcessor {
 			        	 tag = tag.toLowerCase().trim();
 			        	 Stemmer stemmer = new Stemmer();
 			        	 String stem = stemmer.stemString(tag);
-			        	 if (!tags.contains(stem))
-			        		 tags= tags + stem + " ";
+			        	 //if (!tags.contains(stem))
+			        	 tags= tags + stem + " ";
 			        	 
 			         }
 			     }
 			     //System.out.println(tags);
 			     if (tags.equals(""))
 			    	 System.out.println(c.code+" no tags");
+			     //dbc.updateAttributeWhere("rhun_courses", "code", "'"+c.code+"'", "tags", "'"+tags+"'");
+			     
+			     //Get course dept. code #
+			     String codeNum = "";
+			     for (int j=0; j<c.code.length(); j++) {
+			    	 if (Character.isDigit(c.code.charAt(j))) {
+			    		 codeNum = codeNum+c.code.charAt(j);
+			    	 }
+			     }
+			     //dbc.updateAttributeWhere("rhun_courses", "code", "'"+c.code+"'", "cnum", ""+codeNum);
+			     //System.out.println(""+c.code+" : "+codeNum);
+			     
+			     
+			     //Workload
+			     if (c.workload == -1) {
+			    	 c.workload = (int) (c.numUnits * 2.75);
+			     }
+			     //dbc.updateAttributeWhere("rhun_courses", "code", "'"+c.code+"'", "workload", ""+c.workload);
+			     //Unit correction
+			     if (c.numUnits==0) {
+			    	 c.numUnits=5;
+			    	 dbc.updateAttributeWhere("rhun_courses", "code", "'"+c.code+"'", "numUnits", ""+c.numUnits);
+			     }
+			     //WORKLOAD FORMULA
+			     int wScore = calculateWScore(c);
+			     if (c.numUnits<3) {
+			    	 if (wScore>(MIN_WLOAD*c.numUnits)) {
+			    		 wScore = MIN_WLOAD*c.numUnits;
+			    	 }
+			     }
+			     if (wScore<MIN_WLOAD)
+			    	 wScore=MIN_WLOAD;
+			     if (c.code.contains("CS") && !wMap.containsKey(c.code)) {
+			    	 wMap.put(c.code, wScore);
+			    	 if (c.code.equals("CS 142"))
+			    		 System.err.println("CS 142 : "+wScore);
+			    	 sortedWork.put(c.code, wScore);
+			     }
+			     if (c.code.equals("CS 140"))
+			    	 System.out.println("CS 140: "+wScore);
+			     
+			     if (wScore>MAX_WLOAD) {
+			    	 wScore = MAX_WLOAD;
+			    	 System.err.println("OVER MAX : "+c.code);
+			     }
+			     //dbc.updateAttributeWhere("rhun_courses", "code", "'"+c.code+"'", "wScore", ""+wScore);
+			     //Get Professor Score
+			     float professorRating = getProfessorScore(c);
+			     //System.out.println("Professor Rating Avg: "+professorRating);
+			     //Calculate course quality rating (qScore)
+			     float qScore = calculateQScore(c, professorRating);
+			     if (qScore>90) {
+			    	 System.out.println("High Quality Score: "+c.code+" Score: "+qScore);
+			     } if (qScore<60) {
+			    	 System.out.println("Low Quality Score: "+c.code+" Score: "+qScore);
+			     }
+			     
+			   //Get Frequency
+			     float frequency = ((float)(4-freq.get(c.code))/3f)*100;
+			     //dbc.updateAttributeWhere("rhun_courses", "code", "'"+c.code+"'", "freq", ""+frequency);
+			     //System.out.println("Frequency = "+frequency);
+			     /*if (frequency==1)
+			    	 System.out.println("All quarters: "+c.code);*/
+			     
+			     
+			     List<AttrVal> match = new ArrayList<AttrVal>();
+				AttrVal id = new AttrVal();
+				id.type = "int";
+				id.attr = "ID";
+				id.val = ""+c.ID;
+				match.add(id);
+				AttrVal q = new AttrVal();
+				q.type = "String";
+				q.attr = "quarter";
+				q.val = ""+c.quarter;
+				match.add(q);
+				
+				List<AttrVal> update = new ArrayList<AttrVal>();
+				AttrVal a1 = new AttrVal();
+				a1.type = "float";
+				a1.attr = "qScore";
+				a1.val = ""+qScore;
+				AttrVal a2 = new AttrVal();
+				a2.type = "float";
+				a2.attr = "profScore";
+				a2.val = ""+professorRating;
+				AttrVal a3 = new AttrVal();
+				a3.type = "float";
+				a3.attr = "wScore";
+				a3.val = ""+wScore;
+				AttrVal a4 = new AttrVal();
+				a4.type = "int";
+				a4.attr = "workload";
+				a4.val = ""+c.workload;
+				AttrVal a5 = new AttrVal();
+				a5.type = "int";
+				a5.attr = "cnum";
+				a5.val = ""+codeNum;
+				AttrVal a6 = new AttrVal();
+				a6.type = "String";
+				a6.attr = "tags";
+				
+				a6.val = ""+DBEscape(tags);
+				AttrVal a7 = new AttrVal();
+				a7.type = "float";
+				a7.attr = "freq";
+				a7.val = ""+frequency;
+				
+				
+				update.add(a1);
+				update.add(a2);
+				update.add(a3);
+				update.add(a4);
+				update.add(a5);
+				update.add(a6);
+				update.add(a7);
+				//dbc.updateAttributesWhere("rhun_courses", match, update);
+			     
+			     
+			     
+			     
+			     //Calculate Necessity Score
+			     float nScore = calculateNScore(((float)freq.get(c.code)/3f)*100, spreadRev.get(c.code));
+			     if (!nScores.containsKey(c.code))
+			    	 nScores.put(c.code, nScore);
+			     
 				 String prereqs = generatePrereqs(cnames, depts, c.description, c.code);
+				 dbc.update("INSERT INTO rhun_course_prereqs VALUES ('" + c.code + "', '" + 
+							prereqs + "');");
 				 if (!prereqs.equals("")) {
 					 String[] courses = prereqs.split(",");
 					 for (int j=0; j<courses.length; j++) {
@@ -128,12 +308,22 @@ public class dataProcessor {
 				 /*if (c.code.equals("CS 277"))
 					 break;*/
 				
-				//i++;
+				i++;
 			}				
 		} catch (SQLException e) {
 			e.printStackTrace();
 			System.out.println("Unable to get course data.");			
 		}
+		
+		//Debug printing CS workloads
+		int num = 0;
+		for (Map.Entry<String, Integer> e : sortedWork.entrySet()) {
+            //System.out.println("key/value: " + e.getKey() + "/"+e.getValue());
+            num++;
+        }
+		//System.out.println("Num classes: "+num);
+		
+		
 		System.out.println("Done tagging");
 		System.err.println("Starting prereq map recursion");
 		Set<String> keys = reqMap.keySet();
@@ -161,13 +351,148 @@ public class dataProcessor {
 			sortedCount.put(key, reqCount.get(key));
             //System.out.println("key/value: " + key + "/"+reqCount.get(key));
         }*/
+		Map<String, Float> spreadReqs = spreadValuesI(reqCount);
+		for (String key : spreadReqs.keySet()) {
+			dbc.updateAttributeWhere("rhun_courses", "code", "'"+key+"'", "nScore", ""+(spreadReqs.get(key)*PREREQ_FACTOR+(1-PREREQ_FACTOR)*nScores.get(key)));
+		}
 		for (String key : sortedCount.keySet()) {
             System.out.println("key/value: " + key + "/"+sortedCount.get(key));
+            dbc.updateAttributeWhere("rhun_courses", "code", "'"+key+"'", "NumPrereqs", ""+sortedCount.get(key));
         }
 		System.out.println("First size: "+reqCount.size()+" Second size "+sortedCount.size());
 		
 	}
 	
+	
+	private float calculateNScore(float freq, Float revs) {
+		return freq*FREQ_FACTOR+revs*REVIEWS_FACTOR;
+	}
+
+	private float calculateQScore(Course c, float professorRating) {
+		int ratings = c.numReviews;
+		int profWeight = ratings;
+		if (ratings<RATINGS_MINIMUM) {
+			profWeight = RATINGS_MINIMUM;
+		}
+		return (float) (20f*(c.rating*ratings+professorRating*profWeight)/((float)(ratings+profWeight)));
+	}
+
+	private float getProfessorScore(Course c) {
+		List<AttrVal> match = new ArrayList<AttrVal>();
+		AttrVal id = new AttrVal();
+		id.type = "int";
+		id.attr = "courseID";
+		id.val = ""+c.ID;
+		
+		AttrVal q = new AttrVal();
+		q.type = "String";
+		q.attr = "quarter";
+		q.val = c.quarter;
+		
+		match.add(id);
+		match.add(q);
+		
+		List<AttrVal> request = new ArrayList<AttrVal>();
+		AttrVal a = new AttrVal();
+		a.type = "int";
+		a.attr = "lecturerID";
+		request.add(a);
+		
+		List<List<AttrVal>> results=dbc.getAttributesThatMatch("rhun_lecturer_course", request, match);
+		float avgRating;
+		float totalRating = 0;
+		for (int i=0; i<results.size(); i++) {
+			int pid = Integer.parseInt(results.get(i).get(0).val);
+			
+			match = new ArrayList<AttrVal>();
+			id = new AttrVal();
+			id.type = "int";
+			id.attr = "ID";
+			id.val = ""+pid;
+			match.add(id);
+			
+			request = new ArrayList<AttrVal>();
+			a = new AttrVal();
+			a.type = "float";
+			a.attr = "avgRating";
+			request.add(a);
+			
+			AttrVal s = new AttrVal();
+			s.type = "int";
+			s.attr = "star";
+			request.add(s);
+			
+			List<List<AttrVal>> ratings=dbc.getAttributesThatMatch("rhun_lecturers", request, match);
+			
+			for (int j=0; j<ratings.size(); j++) {
+				float rating = Float.parseFloat(ratings.get(j).get(0).val);
+				int star = Integer.parseInt(ratings.get(j).get(1).val);
+				if (rating == 0)
+					rating = DEFAULT_PROFESSOR_RATING;
+				
+				if (j==0 && star==1)
+					totalRating+=STAR_FACTOR;
+				totalRating+=rating;
+			}
+		}
+		avgRating = totalRating / results.size();
+		if (results.size()==0) {
+			System.out.println("no ratings...");
+			return 0;
+		}
+		return avgRating;
+	}
+
+	//Calculates a number for the workload per unit as estimated minutes per unit. Then weight multiply by average grade.
+	private int calculateWScore(Course c) {
+		
+		//Calculate minutes per day
+		int timeDay=((c.timeEnd/100)-(c.timeBegin/100))*60-c.timeBegin%100+c.timeEnd%100;
+		if (c.timeBegin==c.timeEnd)
+			timeDay = 100;
+		
+		//System.out.println("time begin: "+c.timeBegin+" : Time End: "+c.timeEnd+" Duration: "+timeDay);
+		int weekMin = 0;
+		for (int i=0; i<c.lectureDays.length(); i++) {
+			if (c.lectureDays.charAt(i)=='1') {
+				//System.out.println("Day");
+				weekMin+=timeDay;
+			}
+		}
+		//System.out.println("Min per week: "+weekMin);
+		
+		weekMin+=(c.workload*60);
+		
+		int units = c.numUnits;
+		
+		if (c.numUnits==0) {
+			System.out.println(c.code+" zero units");
+			units = 3;
+		}
+		
+		int minUnit = weekMin / units;
+		
+		//((float)c.workload)/20f;
+		
+		//ARBITRARY GRADE FACTORS, TRY TWEAKING FOR BETTER WORKLOAD RESULTS
+		double gradeFactor = 1;
+		if (c.avgGrade.equals("A")) {
+			gradeFactor = 0.5;
+		} else if (c.avgGrade.equals("A-")) {
+			gradeFactor = 1;
+		} else if (c.avgGrade.equals("B+")) {
+			gradeFactor = 1.5;
+		} else if (c.avgGrade.equals("B")) {
+			gradeFactor = 2.5;
+		} else if (c.avgGrade.equals("B-")) {
+			gradeFactor = 3;
+		} else if (c.avgGrade.contains("C")) {
+			gradeFactor = 3.5;
+		}
+		
+		return (int) (minUnit*gradeFactor);
+	}
+
 	private int recursiveCountPrereqs(Map<String, List<String>> reqMap, String course) {
 		int count = 0;
 		
@@ -390,11 +715,112 @@ public class dataProcessor {
 	}
 	
 	
+	public Map<String, Float> spreadValuesF(Map<String, Float> m) {
+		
+		FloatComparator comp =  new FloatComparator(m);
+		Map<String, Float> tree = new TreeMap<String, Float>();
+		for (Map.Entry<String, Float> e : m.entrySet()) {
+            //System.out.println("key/value: " + e.getKey() + "/"+e.getValue());
+            tree.put(e.getKey(), new Float(e.getValue()));
+        }
+		
+		int size = m.size();
+		int count = 0;
+		Float prevValue = null;
+		Float value = (float) 0.0;
+		for (Map.Entry<String, Float> e : tree.entrySet()) {
+            //System.out.println("key/value: " + e.getKey() + "/"+e.getValue());
+			if (prevValue!=null && e.getValue().equals(prevValue)) {
+				m.put(e.getKey(), value);
+			} else {
+				float remainder = MAX_SCORE-value;
+				float inc = remainder / (size-count);
+				value = value+inc;
+				prevValue = value;
+				m.put(e.getKey(), value);
+			}	
+            count++;
+        }
+		return m;
+	}
 	
+public Map<String, Float> spreadValuesI(Map<String, Integer> m) {
+		Map<String, Float> mprime = new HashMap<String, Float>();
+		ValueComparator comp =  new ValueComparator(m, true);
+		Map<String, Integer> tree = new TreeMap<String, Integer>(comp);
+		
+		int max = 0;
+		for (Map.Entry<String, Integer> e : m.entrySet()) {
+            //System.out.println("key/value: " + e.getKey() + "/"+e.getValue());
+			if (e.getValue()>max)
+				max = e.getValue();
+            tree.put(e.getKey(), new Integer(e.getValue()));
+        }
+		
+		int size = m.size();
+		int count = 0;
+		
+		float smoothingFactor = (float) .3;
+		float incFactor = 1 - smoothingFactor; 
+		//1.8 70->60     2 60->50 2.3 50->40 2.8 40->30 4 30->20
+		float movingInc = MAX_SCORE / size;
+		float nextInc = movingInc;
+		
+		Integer prevValue = null;
+		Float value = (float) 0;
+		int repeatCount = 1;
+		boolean other = false;
+		//Float factor = (max)/((float)(size));
+		for (Map.Entry<String, Integer> e : tree.entrySet()) {
+            //System.out.println("key/value: " + e.getKey() + "/"+e.getValue());
+			if (prevValue!=null && e.getValue().equals(prevValue)) {
+				//repeatCount++;
+				nextInc+=(movingInc/2);
+						///repeatCount;
+			} else {
+				/*float remainder = MAX_SCORE-value;
+				//Float inc = (remainder / (size-count));
+				Float expinc = (remainder / (size-count));
+				if (prevValue==null)
+					prevValue = 0;
+				
+				Float factor = (max-prevValue)/((float)(size-count));
+				
+				Float inc = (e.getValue()-prevValue)*(incFactor*expinc/factor+smoothingFactor*expinc);
+				//Float inc = (remainder / (max-e.getValue()))*(e.getValue()-prevValue);*/
+				if (prevValue==null)
+					prevValue = 0;
+				Float factor = (max-prevValue)/((float)(size-count));
+				Float inc = smoothingFactor*nextInc+incFactor*((e.getValue()-prevValue)*nextInc/factor);
+				
+				value = value+inc;
+				prevValue = e.getValue();
+				movingInc = (MAX_SCORE-value)/(size-count-1);
+				nextInc = movingInc;
+				repeatCount=1;
+			}
+			
+			/*if (other) {
+				System.out.println("Name: "+e.getKey()+" Old Value: "+e.getValue()+" Spread Value: "+value);
+				other = false;
+			} else
+				other = true;*/
+			mprime.put(e.getKey(), value);
+			if (count==size/2)
+				System.err.println("MEDIAN REACHED");
+            count++;
+        }
+		return mprime;
+	}
 	
 	class ValueComparator implements Comparator {
 
 		  Map base;
+		  boolean invert = false;
+		  public ValueComparator(Map base, boolean b) {
+		      this.base = base;
+		      invert = b;
+		  }
 		  public ValueComparator(Map base) {
 		      this.base = base;
 		  }
@@ -402,8 +828,28 @@ public class dataProcessor {
 		  public int compare(Object a, Object b) {
 
 		    if((Integer)base.get(a) < (Integer)base.get(b)) {
-		      return 1;
+		      return invert? -1:1;
+		      
 		    } else if((Integer)base.get(a) == (Integer)base.get(b)) {
+		      return ((String)a).compareTo((String)b);
+		    } else {
+		    	return invert? 1:-1;
+		    }
+		  }
+		}
+	
+	class FloatComparator implements Comparator {
+
+		  Map base;
+		  public FloatComparator(Map base) {
+		      this.base = base;
+		  }
+
+		  public int compare(Object a, Object b) {
+
+		    if((Float)base.get(a) < (Float)base.get(b)) {
+		      return 1;
+		    } else if((Float)base.get(a) == (Float)base.get(b)) {
 		      return ((String)a).compareTo((String)b);
 		    } else {
 		      return -1;
@@ -411,7 +857,18 @@ public class dataProcessor {
 		  }
 		}
 	
-	
+	public String DBEscape(String s) {
+		if (s==null)
+			return null;
+		String n = s;
+		n.replace("\\", "\\\\");
+		n.replace("\"", "");
+		n.replace("\'", "");
+		while (n.contains("<") && n.contains(">")) {
+			n = new String(n.substring(0, n.indexOf("<"))+n.substring(n.indexOf(">")+1));
+		}
+		return n;
+	}
 	
 	public static void main(String[] args) {
 		new dataProcessor();

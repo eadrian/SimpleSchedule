@@ -1,6 +1,8 @@
 
 
 
+
+
 //SOURCE::::
 //http://javaskeleton.blogspot.com/2010/07/avoiding-peer-not-authenticated-with.html
 
@@ -25,13 +27,13 @@ public static HttpClient wrapClient(HttpClient base) {
 try {
 SSLContext ctx = SSLContext.getInstance("TLS");
 X509TrustManager tm = new X509TrustManager() {
- 
+
 public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
 }
- 
+
 public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException {
 }
- 
+
 public X509Certificate[] getAcceptedIssuers() {
 return null;
 }
