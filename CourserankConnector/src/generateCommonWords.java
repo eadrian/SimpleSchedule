@@ -19,7 +19,7 @@ public class generateCommonWords {
 	public Map<String, Integer> sortedTags;
 	
 	public int TOP_WORD_COUNT=10;
-	
+	public String[] bannedWords = { "PREREQUISIT","TOPIC","INTRODUCT", "FUNDAMENT", "CONCEPT", "INDEPEND","PROJECT" ,"PRINCIPL","ANALYSI" ,"DATA"};
 	
 	public generateCommonWords() {
 		List<String> commonWords = new ArrayList<String>();
@@ -66,8 +66,27 @@ public class generateCommonWords {
 	
 	//Enters top common words into DB of common words, as well as hand entered words (hardcoded by me).
 	private void enterWords(List<String> commonWords) {
-		// TODO Auto-generated method stub
+		for (int i=0; i<commonWords.size(); i++) {
+			addWord(commonWords.get(i));
+			
+		}
+		for (int i=0; i<bannedWords.length; i++) {
+			if (!commonWords.contains(bannedWords[i]))
+				addWord(bannedWords[i]);
+		}	
 		
+	}
+
+	private void addWord(String string) {
+		try {
+			Statement stmt = dbc.con.createStatement();
+			stmt.executeQuery("USE " + dbc.database);
+			String query = "INSERT INTO rhun_common_Words VALUES ('"+string+"')";
+			dbc.update(query);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public static void main(String[] args) throws Exception {

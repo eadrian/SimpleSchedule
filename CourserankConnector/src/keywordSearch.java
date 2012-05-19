@@ -31,6 +31,7 @@ public class keywordSearch {
 	public Map<String, Integer> sortedDepts;
 	public MaxentTagger tagger;
 	public Map<String, String> deptTags;
+	public Set<String> commonWords;
 	
 	public keywordSearch (List<String> coursesTaken, String major) {
 		dbc = new DBConnection();
@@ -43,6 +44,10 @@ public class keywordSearch {
 		ValueComparator mvc =  new ValueComparator(depts, true);
 		sortedDepts = new TreeMap<String, Integer>(mvc);
 		this.major = major;
+		
+		
+		commonWords = getCommonWords();
+		
 		courses = new HashSet<String>();
 		
 		
@@ -58,6 +63,23 @@ public class keywordSearch {
 		}
 		
 		generateUserData(coursesTaken);
+	}
+	private Set<String> getCommonWords() {
+		Set<String> s = new HashSet<String>();
+		try {
+			Statement stmt = dbc.con.createStatement();
+			stmt.executeQuery("USE " + dbc.database);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_common_words;" );
+			while(rs.next()){
+				String word = rs.getString("word");
+				s.add(word);
+				
+			}				
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Was not able to create new id.");			
+		}
+		return s;
 	}
 	private void generateUserData(List<String> coursesTaken) {
 		getDeptTags();
@@ -110,7 +132,10 @@ public class keywordSearch {
 		    while (st.hasMoreTokens()) {
 		    	 String s = st.nextToken().trim();
 		    	 if (!keywords.containsKey(s)/* && !isCommon(s)*/) {
-		    		 keywords.put(s, 1);
+		    		 if (!commonWords.contains(s))
+		    			 keywords.put(s, 1);
+		    		 else
+		    			 System.out.println("Common word: "+s);
 		    	 } else {
 		    		 keywords.put(s, keywords.get(s)+1);
 		    	 }
@@ -121,6 +146,12 @@ public class keywordSearch {
 			sortedWords.put(e.getKey(), e.getValue());
 		}
 		for (Map.Entry<String, Integer> e : sortedWords.entrySet()) {
+			System.out.println(e.getKey()+" : "+e.getValue());
+		}
+		for (Map.Entry<String, Integer> e : depts.entrySet()) {
+			sortedDepts.put(e.getKey(), e.getValue());
+		}
+		for (Map.Entry<String, Integer> e : sortedDepts.entrySet()) {
 			System.out.println(e.getKey()+" : "+e.getValue());
 		}
 		
