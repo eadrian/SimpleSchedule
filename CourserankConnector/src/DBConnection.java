@@ -266,7 +266,7 @@ public class DBConnection {
 		return false;
 	}
 	
-	public List<List<AttrVal>> getAttributesThatMatch(String table, List<AttrVal> request, List<AttrVal> match) {
+	public List<List<AttrVal>> getAttributesThatMatch(String table, List<AttrVal> request, List<AttrVal> match, boolean sort, String attr) {
 		List<List<AttrVal>> results = new ArrayList<List<AttrVal>>();
 	    
 	    // Construct the query
@@ -283,9 +283,12 @@ public class DBConnection {
 	        }
 			and = "AND ";
 	    }
+	    if (sort) {
+	    	query= query + " ORDER BY "+attr;
+	    }
 	    
 	    // Query the database
-	    System.err.println("Query: "+query);
+	    //System.err.println("Query: "+query);
 		try {
 			Statement stmt = con.createStatement();
 			stmt.executeQuery("USE " + database);

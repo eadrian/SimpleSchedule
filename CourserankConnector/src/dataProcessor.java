@@ -36,10 +36,126 @@ public class dataProcessor {
 		dbc = new DBConnection();
 		dbLock = new Object();
 		//calculateAverageRatings();
-		generateCourseData();
+		//generateCourseData();
+		//generatePrelimScores();
+		makeSumTags();
 	}
 	
+	private void makeSumTags() {
+		try {
+			Statement stmt = dbc.con.createStatement();
+			stmt.executeQuery("USE " + dbc.database);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_courses;" );
+			int i=0;
+			while(rs.next()){
+				i++;
+				if (i%100 == 0)
+					System.out.println("progress");
+				String tags = rs.getString("tags");
+				String dtags = rs.getString("deptTags");
+				String ttags = rs.getString("titleTags");
+				String allTags = tags+dtags+ttags;
+				
+				List<AttrVal> match = new ArrayList<AttrVal>();
+				AttrVal id = new AttrVal();
+				id.type = "int";
+				id.attr = "ID";
+				id.val = ""+rs.getString("ID");
+				match.add(id);
+				AttrVal q = new AttrVal();
+				q.type = "String";
+				q.attr = "quarter";
+				q.val = ""+rs.getString("quarter");
+				match.add(q);
+				
+				List<AttrVal> update = new ArrayList<AttrVal>();
+				AttrVal a1 = new AttrVal();
+				a1.type = "String";
+				a1.attr = "allTags";
+				a1.val = allTags;
+				
+				update.add(a1);
+				dbc.updateAttributesWhere("rhun_courses", match, update);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Unable to get course codes.");			
+		}
+		
+	}
+
+	private void generatePrelimScores() {
+		try {
+			Statement stmt = dbc.con.createStatement();
+			stmt.executeQuery("USE " + dbc.database);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_courses;" );
+			
+			while(rs.next()){
+				String name = rs.getString("code").trim();
+				Float nScore = rs.getFloat("nScore");
+				Float wScore = rs.getFloat("wScore");
+				Float qScore = rs.getFloat("qScore");
+				Float prereqs = rs.getFloat("preScore");
+				int cnum = rs.getInt("cnum");
+				Float tScore = calculateTScore(nScore, wScore, qScore, prereqs, cnum, false);
+				Float majorTScore = calculateTScore(nScore, wScore, qScore, prereqs, cnum, true);
+				List<AttrVal> match = new ArrayList<AttrVal>();
+				AttrVal id = new AttrVal();
+				id.type = "int";
+				id.attr = "ID";
+				id.val = ""+rs.getString("ID");
+				match.add(id);
+				AttrVal q = new AttrVal();
+				q.type = "String";
+				q.attr = "quarter";
+				q.val = ""+rs.getString("quarter");
+				match.add(q);
+				
+				List<AttrVal> update = new ArrayList<AttrVal>();
+				AttrVal a1 = new AttrVal();
+				a1.type = "float";
+				a1.attr = "tScore";
+				a1.val = ""+tScore;
+				AttrVal a2 = new AttrVal();
+				a2.type = "float";
+				a2.attr = "MajorTScore";
+				a2.val = ""+majorTScore;
+				
+				update.add(a1);
+				update.add(a2);
+				dbc.updateAttributesWhere("rhun_courses", match, update);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Unable to get course codes.");			
+		}
+		
+	}
+
+	private Float calculateTScore(Float nScore, Float wScore, Float qScore,
+			Float prereqs, int cnum, boolean inMajor) {
+		int cScore = 0;
+		if (cnum<50) {
+			cScore = 70;
+		} else if (cnum<100) {
+			cScore = 80;
+		} else if (cnum<180) {
+			cScore = 90;
+		} else if (cnum<280) {
+			cScore = 50;
+		} else {
+			cScore = 40;
+		}
+		Float score = cScore+wScore+qScore+nScore;
+		if (inMajor) {
+			score = (float) (score*(float).5+prereqs*(float).5);
+		} 
+		return score;
+	}
+
 	public void generateCourseData() {
+		ValueSpreader v = new ValueSpreader();
+		
 		List<String> depts = getDepartments();
 		List<String> cnames = new ArrayList<String>();
 		Map<String, List<String>> reqMap = new HashMap<String, List<String>>(500);
@@ -59,12 +175,49 @@ public class dataProcessor {
 		Map<String, Integer> revMap = new HashMap<String, Integer>();
 		
 		Map<String, Float> nScores = new HashMap<String, Float>();
+		Map<String, Integer> wScores = new HashMap<String, Integer>();
+		//Department data
+		Map<String, String> deptNames = new HashMap<String, String>();
+		
+		
+		//Initialize Tagger
+		
+		MaxentTagger tagger = null;
+		
+		try {
+			tagger = new MaxentTagger("models/english-left3words-distsim.tagger");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (ClassNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		
 		//Get course codes
 		
 		float avgReviews = 0;
 		int totalCourses = 0;
 		int maxReviews = 0;
 		String maxCode = "";
+		
+		
+		try {
+			Statement stmt = dbc.con.createStatement();
+			stmt.executeQuery("USE " + dbc.database);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_departments;" );
+			while(rs.next()){
+				String name = rs.getString("code").trim();
+				String title = rs.getString("title").trim();
+				deptNames.put(name, getTags(tagger, title));
+				
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Unable to get dept codes.");			
+		}
+		
 		
 		List<Integer> numRevs = new ArrayList<Integer>();
 		
@@ -109,19 +262,9 @@ public class dataProcessor {
 		
 		
 		//Test Value Spreader on Reviews:
-		Map<String, Float> spreadRev = spreadValuesI(revMap);
+		Map<String, Float> spreadRev = v.spreadValuesI(revMap,(float).75, (float).3);
 		
-		MaxentTagger tagger = null;
 		
-		try {
-			tagger = new MaxentTagger("models/english-left3words-distsim.tagger");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (ClassNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 		
 		
 		try {
@@ -141,20 +284,16 @@ public class dataProcessor {
 				}
 				//System.out.println(tagger.tagString(c.description));
 				//System.out.println(tagger.tagString(c.title));
-				StringTokenizer st = new StringTokenizer(" "+tagger.tagString(c.title) + " " +tagger.tagString(c.description)+" ");
-				String tags = " ";
-			     while (st.hasMoreTokens()) {
-			    	 String s = st.nextToken();
-			         if (s.contains("/N") || s.contains("/J")) {
-			        	 String tag = new String(s.substring(0, s.indexOf("/")));
-			        	 tag = tag.toLowerCase().trim();
-			        	 Stemmer stemmer = new Stemmer();
-			        	 String stem = stemmer.stemString(tag);
-			        	 //if (!tags.contains(stem))
-			        	 tags= tags + stem + " ";
-			        	 
-			         }
-			     }
+				String tags = getTags(tagger, c.description);
+				String titleTags = getTags(tagger, c.title);
+				if (titleTags.length()>40)
+					System.err.println("Long title: "+c.title);
+				String deptCode = new String(c.code.substring(0, c.code.indexOf(" ")));
+				String deptTags = deptNames.get(deptCode);
+				//System.out.println(c.code);
+				//System.out.println("Dept tags: "+deptTags);
+				//System.out.println("title tags: "+titleTags);
+				//System.out.println("desc tags: "+tags);
 			     //System.out.println(tags);
 			     if (tags.equals(""))
 			    	 System.out.println(c.code+" no tags");
@@ -179,7 +318,7 @@ public class dataProcessor {
 			     //Unit correction
 			     if (c.numUnits==0) {
 			    	 c.numUnits=5;
-			    	 dbc.updateAttributeWhere("rhun_courses", "code", "'"+c.code+"'", "numUnits", ""+c.numUnits);
+			    	 //dbc.updateAttributeWhere("rhun_courses", "code", "'"+c.code+"'", "numUnits", ""+c.numUnits);
 			     }
 			     //WORKLOAD FORMULA
 			     int wScore = calculateWScore(c);
@@ -190,12 +329,6 @@ public class dataProcessor {
 			     }
 			     if (wScore<MIN_WLOAD)
 			    	 wScore=MIN_WLOAD;
-			     if (c.code.contains("CS") && !wMap.containsKey(c.code)) {
-			    	 wMap.put(c.code, wScore);
-			    	 if (c.code.equals("CS 142"))
-			    		 System.err.println("CS 142 : "+wScore);
-			    	 sortedWork.put(c.code, wScore);
-			     }
 			     if (c.code.equals("CS 140"))
 			    	 System.out.println("CS 140: "+wScore);
 			     
@@ -203,6 +336,12 @@ public class dataProcessor {
 			    	 wScore = MAX_WLOAD;
 			    	 System.err.println("OVER MAX : "+c.code);
 			     }
+			     wScore = MAX_WLOAD-wScore;
+			     if (!wMap.containsKey(c.code)) {
+			    	 wMap.put(c.code, wScore);
+			     }
+			     
+			     
 			     //dbc.updateAttributeWhere("rhun_courses", "code", "'"+c.code+"'", "wScore", ""+wScore);
 			     //Get Professor Score
 			     float professorRating = getProfessorScore(c);
@@ -221,6 +360,11 @@ public class dataProcessor {
 			     //System.out.println("Frequency = "+frequency);
 			     /*if (frequency==1)
 			    	 System.out.println("All quarters: "+c.code);*/
+			     
+			   //Calculate Necessity Score
+			     float nScore = calculateNScore(((float)freq.get(c.code)/3f)*100, spreadRev.get(c.code));
+			     if (!nScores.containsKey(c.code))
+			    	 nScores.put(c.code, nScore);
 			     
 			     
 			     List<AttrVal> match = new ArrayList<AttrVal>();
@@ -266,27 +410,47 @@ public class dataProcessor {
 				a7.attr = "freq";
 				a7.val = ""+frequency;
 				
+				AttrVal a8 = new AttrVal();
+				a8.type = "String";
+				a8.attr = "deptTags";
+				a8.val = deptTags;
+				
+				AttrVal a9 = new AttrVal();
+				a9.type = "String";
+				a9.attr = "titleTags";
+				a9.val = titleTags;
+				
+				AttrVal a10 = new AttrVal();
+				a10.type = "String";
+				a10.attr = "deptCode";
+				a10.val = deptCode;
+				
+				AttrVal a11 = new AttrVal();
+				a11.type = "float";
+				a11.attr = "nScore";
+				a11.val = ""+nScore;
 				
 				update.add(a1);
 				update.add(a2);
-				update.add(a3);
+				//update.add(a3);
 				update.add(a4);
 				update.add(a5);
 				update.add(a6);
 				update.add(a7);
-				//dbc.updateAttributesWhere("rhun_courses", match, update);
+				update.add(a8);
+				update.add(a9);
+				update.add(a10);
+				update.add(a11);
+				dbc.updateAttributesWhere("rhun_courses", match, update);
 			     
 			     
 			     
 			     
-			     //Calculate Necessity Score
-			     float nScore = calculateNScore(((float)freq.get(c.code)/3f)*100, spreadRev.get(c.code));
-			     if (!nScores.containsKey(c.code))
-			    	 nScores.put(c.code, nScore);
+			     
 			     
 				 String prereqs = generatePrereqs(cnames, depts, c.description, c.code);
-				 dbc.update("INSERT INTO rhun_course_prereqs VALUES ('" + c.code + "', '" + 
-							prereqs + "');");
+				 /*dbc.update("INSERT INTO rhun_course_prereqs VALUES ('" + c.code + "', '" + 
+							prereqs + "');");*/
 				 if (!prereqs.equals("")) {
 					 String[] courses = prereqs.split(",");
 					 for (int j=0; j<courses.length; j++) {
@@ -351,9 +515,16 @@ public class dataProcessor {
 			sortedCount.put(key, reqCount.get(key));
             //System.out.println("key/value: " + key + "/"+reqCount.get(key));
         }*/
-		Map<String, Float> spreadReqs = spreadValuesI(reqCount);
+		
+		Map<String, Float> spreadReqs = v.spreadValuesI(reqCount, (float).2, (float).3);
+		
+		Map<String, Float> spreadWScores = v.spreadValuesI(wMap, (float).2, (float).3);
 		for (String key : spreadReqs.keySet()) {
-			dbc.updateAttributeWhere("rhun_courses", "code", "'"+key+"'", "nScore", ""+(spreadReqs.get(key)*PREREQ_FACTOR+(1-PREREQ_FACTOR)*nScores.get(key)));
+			//dbc.updateAttributeWhere("rhun_courses", "code", "'"+key+"'", "nScore", ""+(spreadReqs.get(key)*PREREQ_FACTOR+(1-PREREQ_FACTOR)*nScores.get(key)));
+			dbc.updateAttributeWhere("rhun_courses", "code", "'"+key+"'", "preScore", ""+spreadReqs.get(key));
+		}
+		for (String key : spreadWScores.keySet()) {
+			dbc.updateAttributeWhere("rhun_courses", "code", "'"+key+"'", "wScore", ""+(spreadWScores.get(key)));
 		}
 		for (String key : sortedCount.keySet()) {
             System.out.println("key/value: " + key + "/"+sortedCount.get(key));
@@ -398,7 +569,7 @@ public class dataProcessor {
 		a.attr = "lecturerID";
 		request.add(a);
 		
-		List<List<AttrVal>> results=dbc.getAttributesThatMatch("rhun_lecturer_course", request, match);
+		List<List<AttrVal>> results=dbc.getAttributesThatMatch("rhun_lecturer_course", request, match, false, "");
 		float avgRating;
 		float totalRating = 0;
 		for (int i=0; i<results.size(); i++) {
@@ -422,7 +593,7 @@ public class dataProcessor {
 			s.attr = "star";
 			request.add(s);
 			
-			List<List<AttrVal>> ratings=dbc.getAttributesThatMatch("rhun_lecturers", request, match);
+			List<List<AttrVal>> ratings=dbc.getAttributesThatMatch("rhun_lecturers", request, match, false, "");
 			
 			for (int j=0; j<ratings.size(); j++) {
 				float rating = Float.parseFloat(ratings.get(j).get(0).val);
@@ -657,7 +828,7 @@ public class dataProcessor {
 			request.add(id);
 			request.add(q);
 			
-			List<List<AttrVal>> results=dbc.getAttributesThatMatch("rhun_lecturer_course", request, match);
+			List<List<AttrVal>> results=dbc.getAttributesThatMatch("rhun_lecturer_course", request, match, false, "");
 			
 			float totalReviews = 0;
 			float totalRating = 0;
@@ -685,7 +856,7 @@ public class dataProcessor {
 				
 				request.add(rev);
 				request.add(rate);
-				List<List<AttrVal>> courseData=dbc.getAttributesThatMatch("rhun_courses", request, match);
+				List<List<AttrVal>> courseData=dbc.getAttributesThatMatch("rhun_courses", request, match, false, "");
 				if (courseData.size()!=1) {
 					//System.out.println("Uhhhhhh ERROR");
 					System.out.println(match.get(0).attr+" : "+match.get(0).val);
@@ -714,7 +885,7 @@ public class dataProcessor {
 		}
 	}
 	
-	
+	/*
 	public Map<String, Float> spreadValuesF(Map<String, Float> m) {
 		
 		FloatComparator comp =  new FloatComparator(m);
@@ -787,7 +958,7 @@ public Map<String, Float> spreadValuesI(Map<String, Integer> m) {
 				Float factor = (max-prevValue)/((float)(size-count));
 				
 				Float inc = (e.getValue()-prevValue)*(incFactor*expinc/factor+smoothingFactor*expinc);
-				//Float inc = (remainder / (max-e.getValue()))*(e.getValue()-prevValue);*/
+				//Float inc = (remainder / (max-e.getValue()))*(e.getValue()-prevValue);
 				if (prevValue==null)
 					prevValue = 0;
 				Float factor = (max-prevValue)/((float)(size-count));
@@ -804,7 +975,7 @@ public Map<String, Float> spreadValuesI(Map<String, Integer> m) {
 				System.out.println("Name: "+e.getKey()+" Old Value: "+e.getValue()+" Spread Value: "+value);
 				other = false;
 			} else
-				other = true;*/
+				other = true;
 			mprime.put(e.getKey(), value);
 			if (count==size/2)
 				System.err.println("MEDIAN REACHED");
@@ -812,50 +983,10 @@ public Map<String, Float> spreadValuesI(Map<String, Integer> m) {
         }
 		return mprime;
 	}
+	*/
 	
-	class ValueComparator implements Comparator {
-
-		  Map base;
-		  boolean invert = false;
-		  public ValueComparator(Map base, boolean b) {
-		      this.base = base;
-		      invert = b;
-		  }
-		  public ValueComparator(Map base) {
-		      this.base = base;
-		  }
-
-		  public int compare(Object a, Object b) {
-
-		    if((Integer)base.get(a) < (Integer)base.get(b)) {
-		      return invert? -1:1;
-		      
-		    } else if((Integer)base.get(a) == (Integer)base.get(b)) {
-		      return ((String)a).compareTo((String)b);
-		    } else {
-		    	return invert? 1:-1;
-		    }
-		  }
-		}
 	
-	class FloatComparator implements Comparator {
 
-		  Map base;
-		  public FloatComparator(Map base) {
-		      this.base = base;
-		  }
-
-		  public int compare(Object a, Object b) {
-
-		    if((Float)base.get(a) < (Float)base.get(b)) {
-		      return 1;
-		    } else if((Float)base.get(a) == (Float)base.get(b)) {
-		      return ((String)a).compareTo((String)b);
-		    } else {
-		      return -1;
-		    }
-		  }
-		}
 	
 	public String DBEscape(String s) {
 		if (s==null)
@@ -872,5 +1003,24 @@ public Map<String, Float> spreadValuesI(Map<String, Integer> m) {
 	
 	public static void main(String[] args) {
 		new dataProcessor();
+	}
+	
+	String getTags(MaxentTagger tagger, String str) {
+		StringTokenizer st = new StringTokenizer(" "+tagger.tagString(str) + " ");
+		String tags = " ";
+	     while (st.hasMoreTokens()) {
+	    	 String s = st.nextToken();
+	         if (s.contains("/N") || s.contains("/J")) {
+	        	 String tag = new String(s.substring(0, s.indexOf("/")));
+	        	 tag = tag.toLowerCase().trim();
+	        	 Stemmer stemmer = new Stemmer();
+	        	 String stem = stemmer.stemString(tag);
+	        	 //if (!tags.contains(stem))
+	        	 tags= tags + stem + " ";
+	        	 
+	         }
+	     }
+	     return tags.toUpperCase();
+		
 	}
 }

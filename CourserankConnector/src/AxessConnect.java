@@ -216,7 +216,7 @@ public class AxessConnect {
             	String title = getToken(courses[i],"PSHYPERLINK\' >", "<");
             
             	System.out.println(cname+" : "+title);
-            	coursesTaken.add(cname);
+            	coursesTaken.add(cname+" : "+title);
             }
             return coursesTaken;
             
@@ -232,7 +232,8 @@ public class AxessConnect {
     public static void main(String[] args) throws Exception {
         AxessConnect a = new AxessConnect("eaconte","mttresp1");
         
-        new keywordSearch("computer networks", a.getCourses());
+        keywordSearch k = new keywordSearch(a.getCourses(), "CS");
+        //k.search("computer networks");
     }
     
     public static String getToken(String str, String start, String end) {
