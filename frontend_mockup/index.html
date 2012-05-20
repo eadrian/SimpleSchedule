@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN""http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+	<title>Simple Schedule</title>
+	<!--
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Jura">
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:100,200,300,400,800">
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Comfortaa">
+	-->
+	
+	<!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Dosis:200,400,800">
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Open+Sans">
+	<link rel='stylesheet' type='text/css' href='reset.css' />
+	<link rel='stylesheet' type='text/css' href='coldfells.css' />					
+	<link rel='stylesheet' type='text/css' href='jquery.weekcalendar.css' />	
+	<style type="text/css">
+	.calendar2 .wc-grid-timeslot-header, .calendar3 .wc-grid-timeslot-header { display: none; }
+	.wc-header { display: none; }
+	.calendar2, .calendar3 { float: right; height: 70px; border: 1px solid gray; border: 1px solid #2b2b2b; overflow: hidden; width: 130px;}
+	</style>	
+	
+	<!-- JQUERY CALLS -->
+	<script type='text/javascript' src='libs/jquery-1.4.4.min.js'></script>
+    <script type='text/javascript' src='libs/jquery-ui-1.8.11.custom.min.js'></script>
+	  
+	<!-- SCRIPTS: CALENDAR -->
+	<script type="text/javascript" src="libs/date.js"></script>
+	<script type='text/javascript' src='jquery.weekcalendar.js'></script>
+	<script type='text/javascript' src='coldfells.js'></script>
+	
+	<!-- SCRIPTS: SCROLLING -->	
+	<link href="scrollbar/jquery.mCustomScrollbar.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="scrollbar/jquery.easing.1.3.js"></script>
+	<script type="text/javascript" src="scrollbar/jquery.mousewheel.min.js"></script>
+</head>
+<body> 
+	<nav>
+		<article>
+			<h1>Simple Schedule</h1>
+			<h6>&#151; Stanford &#151;</h6>
+		</article>
+		<ul>
+			<li class="current" >Schedule</li>
+			<li><img src="search.png" />Search</li>
+			<li><img src="profile.png" />Profile</li>
+			<li><img src="clock.png" />Planner</li>
+			<li class="secondary" style="margin-top: 100px">About</li>
+			<li class="secondary" >Blah</li>
+		</ul>
+	</nav>
+	<div id="content">
+		<div id="stipulationsWrapper">
+			<div id="stipulations">
+				<h3>Stipulations:</h3>
+				<ul id="sortable" class="ui-sortable">
+					<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" checked />Classes before <input type="text" maxlength=2 /> am</li>
+					<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" checked />No classes on Friday</li>
+					<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" checked />Fun classes</li>
+					<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" checked />Highly-rated classes</li>
+					<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" checked />Highly-rated classes</li>
+					<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" checked />Major Requirements</li>
+					<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" checked />Minimum Workload</li>
+					<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" checked />GER Requirements</li>
+					<li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><input type="checkbox" checked />Keyword match</li>
+				</ul>
+				<input type="submit" value="Generate" class="thumb" />
+				<input type="submit" value="Reset" />
+				<h3>Major:</h3>Computer Science
+			</div>
+		</div>
+		<div id="calendar_selection" class="ui-corner-all" style="display: none">
+			<strong>Event Data Source: </strong>
+			<select id="data_source">
+			  <option value="">Select Event Data</option>
+			  <option value="1">Event Data 1</option>
+			  <option value="2">Event data 2</option>
+			  <option value="3">Event data 3</option>
+			</select>
+		</div>
+		<div id="calendarWrapperWrapper">
+			<input type="submit" value="Enroll" style="margin-bottom: 10px; padding: 8px; margin-left: 10px" />
+			<input type="submit" value="Add a Class" style="margin-bottom: 10px; padding: 8px;" />	
+			<div id='calendarWrapper'>
+				<div id='calendar'></div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- HORIZONTAL SCROLL -->
+
+	<!-- content block -->
+	<div id="mcs5_container">
+		<div class="customScrollBox">
+			<!-- horWrapper div is important for horizontal scrollers! -->
+			<div class="horWrapper"> 
+			<div class="container">
+				<div class="content">
+					<div class='calendar3 thumb'></div>
+					<div class='calendar2 thumb'></div>
+					<div class='calendar3 thumb'></div>
+					<div class='calendar2 thumb'></div>
+					<div class='calendar3 thumb'></div>
+					<div class='calendar2 thumb'></div>
+				</div>
+			</div>
+			<div class="dragger_container">
+				<div class="dragger"></div>
+			</div>
+			</div>
+		</div><a href="#" class="scrollUpBtn">&#9668; </a> 
+		<a href="#" class="scrollDownBtn">&#9658; </a>
+	</div>
+
+<script>
+$(window).load(function() {
+	mCustomScrollbars();
+});
+
+function mCustomScrollbars(){
+	/* 
+	malihu custom scrollbar function parameters: 
+	1) scroll type (values: "vertical" or "horizontal")
+	2) scroll easing amount (0 for no easing) 
+	3) scroll easing type 
+	4) extra bottom scrolling space for vertical scroll type only (minimum value: 1)
+	5) scrollbar height/width adjustment (values: "auto" or "fixed")
+	6) mouse-wheel support (values: "yes" or "no")
+	7) scrolling via buttons support (values: "yes" or "no")
+	8) buttons scrolling speed (values: 1-20, 1 being the slowest)
+	*/
+	$("#mcs_container").mCustomScrollbar("vertical",400,"easeOutCirc",1.05,"auto","yes","yes",10); 
+	$("#mcs2_container").mCustomScrollbar("vertical",0,"easeOutCirc",1.05,"auto","yes","no",0); 
+	$("#mcs3_container").mCustomScrollbar("vertical",900,"easeOutCirc",1.05,"auto","no","no",0); 
+	$("#mcs4_container").mCustomScrollbar("vertical",200,"easeOutCirc",1.25,"fixed","yes","no",0); 
+	$("#mcs5_container").mCustomScrollbar("horizontal",500,"easeOutCirc",1,"fixed","yes","yes",20); 
+}
+
+/* function to fix the -10000 pixel limit of jquery.animate */
+$.fx.prototype.cur = function(){
+    if ( this.elem[this.prop] != null && (!this.elem.style || this.elem.style[this.prop] == null) ) {
+      return this.elem[ this.prop ];
+    }
+    var r = parseFloat( jQuery.css( this.elem, this.prop ) );
+    return typeof r == 'undefined' ? 0 : r;
+}
+
+/* function to load new content dynamically */
+function LoadNewContent(id,file){
+	$("#"+id+" .customScrollBox .content").load(file,function(){
+		mCustomScrollbars();
+	});
+}
+</script>
+<script src="scrollbar/jquery.mCustomScrollbar.js"></script>
+</body>
+</html>
