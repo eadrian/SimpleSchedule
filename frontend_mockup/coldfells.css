@@ -1,0 +1,265 @@
+body {
+	background: #edeadc;
+	width: 100%;
+	overflow-x: hidden;
+	position: relative;
+	height: 100%;
+	font-family: "Open Sans", "Lucida Grande", Helvetica, Arial, Verdana, sans-serif;
+	font-size: 83.33%;
+}
+
+h1 {
+	padding: 0.5em;
+	font-size: 1.6em;
+} 
+
+h2 {
+	margin: 0.5em 0;
+	font-size: 1.4em;	
+}
+
+p {
+	margin: 0.5em;	
+}
+
+.ui-widget {
+	font-size: 1em;	
+}
+
+#event_edit_container, #about {
+	display: none;
+}
+
+#about_button_container {
+	position: absolute;
+	top: 0em;
+	right: 0em;	
+	padding: 0.5em 2em;
+	background: #ddf;
+	border: 1px solid #bbd;
+	width: 25em;
+	text-align: center;
+}
+
+.wc-header td {
+/*	background: url(images/header-bg.png) repeat-x;*/
+}
+
+#event_edit_container label {
+	display: block;
+	margin-top: 1em;
+	margin-bottom: 0.5em;
+}
+
+form ul {
+	padding: 0.3em;
+}
+
+select, input[type='text'], textarea {
+	width: 250px;
+	padding: 3px;
+}
+
+input[type='text'] {
+	width: 245px;
+}
+
+ul.formatted,ol.formatted {
+	display: block;
+	margin: 1em 0.5em;
+}
+
+ul.formatted li,ol.formatted li {
+	margin: 5px 30px;
+	display: auto;
+}
+
+ul.formatted li {
+	list-style-type: disc;
+}
+
+ol.formatted li {
+	list-style-type: decimal;
+}
+#switcher{float:left;}
+
+h3 { 
+	font-family: 'Dosis';
+	font-size: 200%;
+	margin: 10px 0;
+}
+
+
+/** NAVIGATION **/
+nav {
+	font-family: 'Dosis';
+	text-transform: uppercase;
+	font-size: 190%;
+	font-weight: 300;
+	color: white;
+	background: #2A2C31;
+	height: 100%;
+	width: 200px;
+	position: fixed;
+	left: 0;
+	z-index: 5000;
+}
+
+nav li {
+	height: 50px;
+	line-height: 50px;
+	text-align: right;
+	padding: 10px 20px;
+}
+
+nav article { padding: 40px 0; font-family: 'Open Sans'; font-size: 12px; letter-spacing: 3px; text-align: center}
+nav h1 {}
+nav h6 { color: #666; }
+
+nav li.current {
+	background: #DFBA69;
+	color: #555152;
+}
+nav li:hover {
+	background: #3E4147;
+}
+
+li.secondary {
+	font-family: 'Open Sans';
+	background: #3E4147;
+	color: #FFFEDF;
+	font-size: 13px;
+	height: 40px;
+}
+
+/* HORIZONTAL SCROLLING STYLES **/
+.container .wc-container{
+	height: 60px;
+	overflow: hidden;
+}
+
+.container table {
+	border: 5px solid #dfba69;
+}
+
+.container .calendar2, .container .calendar3 {
+	border: 0;
+	margin: 10px;
+}
+
+#content {
+	background: #f6f5ee;
+	height: 100%;
+	margin-left: 200px;
+	overflow-x: hidden;
+	position: fixed;
+	width: 100%;
+}
+
+#stipulationsWrapper {
+	background: url('http://www.secondstory.com/images/magazine/light_background.png') repeat;
+	float: left;
+	margin: 0 30px;
+	height: 100%;
+	width: 270px;
+}
+#stipulations {
+	width: 230px;
+	margin: 0 20px;
+}
+
+#stipulations input, #calendarWrapperWrapper input{
+	background: #5A2E2E;
+	color: white;
+	border: 0;
+	padding: 10px;
+	margin: 20px 5px;
+	width: 40%;
+	text-transform: uppercase;
+}
+
+#calendarWrapperWrapper input{
+	width: 20%;
+	margin: 0 auto;
+	float: right;
+}
+
+#stipulations input:hover{
+	background: #392020;
+}
+
+#calendarWrapperWrapper {
+	width: 663px;
+	float: left;
+	margin: 10px 0;
+	overflow: hidden;
+}
+
+#calendarWrapper {
+	background: url('images/divider.png') no-repeat right bottom;
+	padding-bottom: 30px;
+	width: 663px;
+}
+
+#calendar {
+	height: 480px;
+	width: 100%;	
+	overflow: hidden;
+}
+
+#sortable { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+#sortable li { color: #6D6A67; padding: 10px 0; letter-spacing: 0.1em; font-family: "Open Sans"; border: 1px solid green;text-transform: uppercase; width:100%; border: 1px dotted gray; background: white; font-size: 1.0em; height: 18px; }
+
+#sortable li span { display: block;  position: absolute; margin-left: -1.3em; }
+#sortable input {
+	padding: 0;
+	height: 10px;
+	overflow: hidden;
+	margin: 0 10px 0 10px;
+	width: 10px;
+}
+#sortable input[type=text] {
+	background: #edeadc;
+	color: #6D6A67;
+	padding: 2px;
+	height: 15px;
+	width: 15px;
+}
+.ui-widget-header {
+	display: none;
+}
+  p.description {
+    font-size: 0.8em;
+    padding: 1em;
+    position: absolute;
+    top: 3.2em;
+    margin-right: 400px;
+  }
+
+  .clearer {
+    clear: both;
+  }
+
+  #calendar_selection {
+    font-size: 0.7em;
+    position: absolute;
+    top: 1em;
+    right: 1em;
+    padding: 1em;
+    background: #ffc;
+    border: 1px solid #dda;
+    width: 270px;
+  }
+
+  #message {
+    font-size: 0.7em;
+    padding: 1em;
+    margin-right: 1em;
+    margin-bottom: 10px;
+    background: #ddf;
+    border: 1px solid #aad;
+    width: 270px;
+    float: right;
+  }
+  
+ .wc-time, .ui-corner-top { display: none; }
