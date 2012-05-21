@@ -315,6 +315,87 @@ public class DBConnection {
 		}
 		return results;
 	}
+
+	public List<Course> getCoursesThatMatch(List<AttrVal> match ) {
+		// TODO Auto-generated method stub
+		return getCoursesThatMatchSorted(match, false,"");
+		
+	}
+	
+	public List<Course> getCoursesThatMatchSorted(List<AttrVal> match, boolean sort, String attr) {
+		
+		List<Course> results = new ArrayList<Course>();
+	    
+	    // Construct the query
+		String query = "SELECT * FROM rhun_courses WHERE ";
+		String and = "";
+	    for (int i=0; i<match.size(); i++) {								// for each attr-value pair
+	        if (match.get(i).type.equals("String")) {
+	        	if (!match.get(i).like)
+	        		query += and + match.get(i).attr + " = '" + match.get(i).val + "' ";
+	        	else 
+	        		query += and + match.get(i).attr + " LIKE '" + match.get(i).val + "' ";
+	        } else if (match.get(i).type.equals("int")|| match.get(i).type.equals("float")) {
+	        	query += and + match.get(i).attr + " = " + match.get(i).val + " ";
+	        }
+			and = "AND ";
+	    }
+	    if (sort) {
+	    	query= query + " ORDER BY "+attr;
+	    }
+		
+		System.err.println("Executing query: "+query);
+	    
+	    try {
+			Statement stmt = con.createStatement();
+			stmt.executeQuery("USE " + database);
+			ResultSet rs = stmt.executeQuery(query);
+			while (rs.next()) {
+				//System.out.println(".");
+				Course c = new Course(rs.getInt("ID"), rs.getString("avgGrade"), rs.getString("code"), 
+						  rs.getString("description"), rs.getInt("deptID"), rs.getString("title"),
+						  rs.getString("grading"), rs.getString("lectureDays"), rs.getInt("numReviews"), 
+						  rs.getInt("numUnits"), rs.getDouble("rating"), rs.getInt("timeBegin"), 
+						  rs.getInt("timeEnd"), rs.getString("tags"), rs.getString("type"), rs.getInt("workload"));
+				c.allTags="";
+				c.titleTags="";
+				c.deptTags="";
+				c.nScore=rs.getFloat("nScore");
+				c.wScore=rs.getFloat("wScore");
+				c.qScore=rs.getFloat("qScore");
+				c.tScore=rs.getFloat("tScore");
+				c.majorTScore=rs.getFloat("MajorTScore");
+				c.preScore=rs.getFloat("preScore");
+				c.numPrereqs=rs.getInt("NumPrereqs");
+				c.GERScore=rs.getInt("numGERS");
+				c.universityReqs = rs.getString("prereqs");
+				c.prereqs = parsePrereqs(rs.getString("prereqs"));
+				results.add(c);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Was not able to retrieve courses that match");
+		}
+	    if (results.size()==0)
+	    	return null;
+    	else {
+    		System.out.println("Returning results");
+	    	return results;
+	    	
+    	}
+		
+	}
+
+	private List<String> parsePrereqs(String reqs) {
+		List<String> prereqs = new ArrayList<String>();
+		String[] reqArray = reqs.split(",");
+		for (int i=0; i<reqArray.length || i==0; i++) {
+			prereqs.add(reqArray[i]);
+		}
+		return prereqs;
+	}
+
+	
 	
 }
 

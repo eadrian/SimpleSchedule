@@ -20,7 +20,7 @@ public class Course {
 	public int numReviews;
 	public int numUnits;	
 	public double rating;	
-	public String tags;
+	
 	public int timeBegin;
 	public int timeEnd;
 	public String type;
@@ -28,6 +28,20 @@ public class Course {
 	public String quarter = "";
 	public String department;
 	public String deptAB;
+	public float wScore;
+	public float nScore;
+	public float qScore;
+	public float tScore;
+	public float majorTScore;
+	public float preScore;
+	public int numPrereqs;
+	public int GERScore;
+	
+	public String tags;
+	public String titleTags;
+	public String deptTags;
+	public String allTags;
+	
 	
 	/* Stored in other tables */
 	public List<String> lecturers; // names of lecturers

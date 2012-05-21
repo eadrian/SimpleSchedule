@@ -21,34 +21,15 @@ public class keywordSearch {
 	
 	private static DBConnection dbc;
 	public static Object dbLock;
+	private MaxentTagger tagger;
 	
+	public userData data;
 	
-	public Map<String, Integer> keywords;
-	public Set<String> courses;
-	public String major;
-	public Map<String, Integer> depts;
-	public Map<String, Integer> sortedWords;
-	public Map<String, Integer> sortedDepts;
-	public MaxentTagger tagger;
-	public Map<String, String> deptTags;
-	public Set<String> commonWords;
-	
-	public keywordSearch (List<String> coursesTaken, String major) {
+	public keywordSearch (userData u, String major) {
 		dbc = new DBConnection();
 		dbLock = new Object();
+		data = u;
 		
-		keywords = new HashMap<String, Integer>();
-		ValueComparator bvc =  new ValueComparator(keywords, true);
-		sortedWords = new TreeMap<String, Integer>(bvc);
-		depts = new HashMap<String, Integer>();
-		ValueComparator mvc =  new ValueComparator(depts, true);
-		sortedDepts = new TreeMap<String, Integer>(mvc);
-		this.major = major;
-		
-		
-		commonWords = getCommonWords();
-		
-		courses = new HashSet<String>();
 		
 		
 		
@@ -62,167 +43,137 @@ public class keywordSearch {
 			e.printStackTrace();
 		}
 		
-		generateUserData(coursesTaken);
 	}
-	private Set<String> getCommonWords() {
-		Set<String> s = new HashSet<String>();
-		try {
-			Statement stmt = dbc.con.createStatement();
-			stmt.executeQuery("USE " + dbc.database);
-			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_common_words;" );
-			while(rs.next()){
-				String word = rs.getString("word");
-				s.add(word);
-				
-			}				
-		} catch (SQLException e) {
-			e.printStackTrace();
-			System.out.println("Was not able to create new id.");			
+	
+	public void search(String search, String quarter, boolean sortByDesirability, boolean sortByRelevance, List<searchFactor> factors, Schedule sched) {
+		List<Course> results = searchForCourses(search, quarter);
+		for (int i=0; i<results.size(); i++) {
+			System.out.println(results.get(i).code);
 		}
-		return s;
+		if (sortByDesirability || sortByRelevance) { 
+			float desirabilityFactor = sortByDesirability ? 1 : 0;
+			float relevanceFactor = sortByRelevance ? 1 : 0;
+			float total = desirabilityFactor+relevanceFactor;
+			sortResults(results, desirabilityFactor/total, relevanceFactor/total, sched);
+		}
+		
 	}
-	private void generateUserData(List<String> coursesTaken) {
-		getDeptTags();
-		for (int i=0; i<coursesTaken.size(); i++) {
-			String c = coursesTaken.get(i);
-			int index = c.indexOf(":");
-			String code = new String(c.substring(0,index).trim());
-			String dept = new String(code.substring(0, code.indexOf(" ")));
-			
-			if (dept.equals("UGTEST"))
-				continue;
-			
-			if (!deptTags.containsKey(dept)) {
-				System.err.println("Did not find dept: "+dept);
-				continue;
-			}
-			
-			String title = new String(c.substring(index+1));
-			
-			
-			
-			courses.add(code);
-			
-			if (!depts.containsKey(dept)) {
-				depts.put(dept, 1);
+	
+	private void sortResults(List<Course> results, float dFactor, float rFactor, Schedule sched) {
+		System.out.println("dFactor: "+dFactor+" rFactor:"+rFactor);
+		
+		for (int i=0; i<results.size(); i++) {
+			Course c = results.get(i);
+			System.out.println("Trying to fit: "+c.code);
+			if (sched.checkFit(c.code,c.lectureDays, c.timeBegin, c.timeEnd)) {
+				
 			} else {
-				depts.put(dept, depts.get(dept)+1);
-			}
-			System.err.println("Searching for course: "+code);
-			String tags="";
-			try {
-				Statement stmt = dbc.con.createStatement();
-				stmt.executeQuery("USE " + dbc.database);
-				ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_courses WHERE code = '" + code+"'");
 				
-				if(rs.next()) {
-					tags = rs.getString("allTags");
-					System.out.println("Found course tags: "+tags);
-				} else {
-					tags = deptTags.get(dept)+" "+getTags(tagger, title);
-					System.out.println("Did not find course, generated tags: "+tags);
-				}
-				
-			} catch (SQLException e) {
-				System.out.println("Was not able to retrieve attribute.");
-				e.printStackTrace();
 			}
+				
 			
-			StringTokenizer st = new StringTokenizer(tags, " ;,.)/-:(", false);
-		    while (st.hasMoreTokens()) {
-		    	 String s = st.nextToken().trim();
-		    	 if (!keywords.containsKey(s)/* && !isCommon(s)*/) {
-		    		 if (!commonWords.contains(s))
-		    			 keywords.put(s, 1);
-		    		 else
-		    			 System.out.println("Common word: "+s);
-		    	 } else {
-		    		 keywords.put(s, keywords.get(s)+1);
-		    	 }
-		    }
-		}
-		
-		for (Map.Entry<String, Integer> e : keywords.entrySet()) {
-			sortedWords.put(e.getKey(), e.getValue());
-		}
-		for (Map.Entry<String, Integer> e : sortedWords.entrySet()) {
-			System.out.println(e.getKey()+" : "+e.getValue());
-		}
-		for (Map.Entry<String, Integer> e : depts.entrySet()) {
-			sortedDepts.put(e.getKey(), e.getValue());
-		}
-		for (Map.Entry<String, Integer> e : sortedDepts.entrySet()) {
-			System.out.println(e.getKey()+" : "+e.getValue());
 		}
 		
 	}
-	private void getDeptTags() {
-		deptTags =  new HashMap<String, String>();
-		try {
-			Statement stmt = dbc.con.createStatement();
-			stmt.executeQuery("USE " + dbc.database);
-			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_departments;" );
-			while(rs.next()){
-				String name = rs.getString("code").trim();
-				String title = rs.getString("title").trim();
-				deptTags.put(name, getTags(tagger, title));
-				
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			System.out.println("Unable to get dept codes.");			
-		}
-		
-	}
-	public void search(String search) {
+
+	public List<Course> searchForCourses(String search, String quarter) {
 		List<String> keywordList = new ArrayList<String>();
-		
 		StringTokenizer st = new StringTokenizer(search, " ;,.)/-:(", false);
+		
 		List<AttrVal> match = new ArrayList<AttrVal>();
 	    while (st.hasMoreTokens()) {
-	    	Stemmer stemmer = new Stemmer();
+	    	
 	    	String token = st.nextToken().trim();
-	    	keywordList.add(stemmer.stemString(token));
+	    	keywordList.add(token);
+	    	
+	    }
+	    
+	    
+	    
+	    List<Course> cResults = null;
+	    
+	    //If a single word entered check for class or department
+	    if (keywordList.size()==1) {
+	    	cResults = getCourseCodeMatches(keywordList.get(0), quarter);
+	    	
+	    	if (cResults==null) {
+	    		//If no results found, try the single word as a department code
+	    		
+	    		cResults = getDeptCodeMatches(keywordList.get(0),quarter);
+	    	}
+	    } else if (keywordList.size()==2) {
+	    //If two words check for a class match
+	    	String combined = keywordList.get(0)+keywordList.get(1);
+	    	cResults = getCourseCodeMatches(combined, quarter);
+	    }
+	    
+	    if (cResults!=null)
+	    	return cResults;
+	    
+	    
+	    List<String> taggedSearch = new ArrayList<String>();
+		String searchTags = getTags(tagger, search);
+		st = new StringTokenizer(searchTags, " ;,.)/-:(", false);
+		
+	    while (st.hasMoreTokens()) {
+	    	
+	    	taggedSearch.add(st.nextToken());
+	    	
+	    }
+	    System.err.println("No courses or depts found, using keywords...");
+	    
+	    
+	    for (int i=0;i<taggedSearch.size();i++) {
+	    	String word = taggedSearch.get(i);
 	    	AttrVal a = new AttrVal();
 	    	a.like = true;
 	    	a.type = "String";
-	    	a.attr = "tags";
-	    	a.val = "%"+stemmer.stemString(token).toUpperCase()+"%";
+	    	a.attr = "allTags";
+	    	System.out.println("Searchword: "+word);
+	    	a.val = "%"+word+"%";
 	    	match.add(a);
 	    }
-	    List<AttrVal> request = new ArrayList<AttrVal>();
-	    AttrVal r = new AttrVal();
-	    r.type="String";
-	    r.attr = "code";
 	    
-	    AttrVal r2 = new AttrVal();
-	    r2.type="float";
-	    r2.attr = "qScore";
+	    if (!quarter.equals("ALL")) {
+    		AttrVal q = new AttrVal();
+    		q.type = "String";
+    		q.attr = "quarter";
+    		q.val = quarter;
+        	match.add(q);
+    	}
+	   
+	    cResults = dbc.getCoursesThatMatch(match);
 	    
-	    AttrVal r3 = new AttrVal();
-	    r3.type="float";
-	    r3.attr = "wScore";
+	    if (cResults!=null)
+	    	return cResults;
 	    
-	    AttrVal r4 = new AttrVal();
-	    r4.type="float";
-	    r4.attr = "nScore";
+	    match = new ArrayList<AttrVal>();
+	    for (int i=0;i<keywordList.size();i++) {
+	    	String word = keywordList.get(i).toUpperCase();
+	    	AttrVal a = new AttrVal();
+	    	a.like = true;
+	    	a.type = "String";
+	    	a.attr = "allTags";
+	    	System.out.println("Searchword: "+word);
+	    	a.val = "%"+word+"%";
+	    	match.add(a);
+	    }
+	   
 	    
-	    AttrVal r5 = new AttrVal();
-	    r5.type="String";
-	    r5.attr = "tags";
+	    if (!quarter.equals("ALL")) {
+    		AttrVal q = new AttrVal();
+    		q.type = "String";
+    		q.attr = "quarter";
+    		q.val = quarter;
+        	match.add(q);
+    	}
 	    
-	    AttrVal r9 = new AttrVal();
-	    r9.type="float";
-	    r9.attr = "tScore";
 	    
-	    request.add(r);
-	    request.add(r2);
-	    request.add(r3);
-	    request.add(r4);
-	    request.add(r5);
-	    request.add(r9);
-	    List<List<AttrVal>> results = dbc.getAttributesThatMatch("rhun_courses", request, match, true, "tScore");
+	    cResults = dbc.getCoursesThatMatch(match);
 	    
+	    
+	    return cResults;
+	    /*
 	    
 	    Map<String, Float> rateMap = new TreeMap<String, Float>();
 		FloatComparator bvc =  new FloatComparator(rateMap);
@@ -244,7 +195,7 @@ public class keywordSearch {
 	    for (Map.Entry<String, Float> e : sortedResults.entrySet()) {
             System.out.println("key/value: " + e.getKey() + "/"+e.getValue());
             
-        }*/
+        }
 		String codeNum = "";
 	     /*for (int j=0; j<c.code.length(); j++) {
 	    	 if (Character.isDigit(c.code.charAt(j))) {
@@ -253,7 +204,58 @@ public class keywordSearch {
 	     }*/
 	}
 	
-	String getTags(MaxentTagger tagger, String str) {
+	private List<Course> getDeptCodeMatches(String string, String q) {
+		
+		List<AttrVal> match = new ArrayList<AttrVal>();
+		AttrVal code = new AttrVal();
+    	code.type = "String";
+    	code.attr = "deptCode";
+    	code.val = string.toUpperCase();
+    	match.add(code);
+    	
+    	if (!q.equals("ALL")) {
+    		AttrVal quarter = new AttrVal();
+    		quarter.type = "String";
+    		quarter.attr = "quarter";
+    		quarter.val = q;
+        	match.add(quarter);
+    	}
+		
+    	List<Course> results = dbc.getCoursesThatMatch(match);
+    	for (int i=0; i<results.size(); i++) {
+    		System.out.println(""+i+": "+results.get(i).code);
+    	}
+    	return results;
+	}
+
+	private List<Course> getCourseCodeMatches(String combined, String q) {
+		
+		String deptCode = getCodeDept(combined);
+		if (deptCode.equals("NOT FOUND"))
+			return null;
+		String codeNum = getCodeNum(combined);
+		List<AttrVal> match = new ArrayList<AttrVal>();
+		AttrVal code = new AttrVal();
+    	code.type = "String";
+    	code.attr = "code";
+    	code.val = deptCode+" "+codeNum;
+    	match.add(code);
+    	if (!q.equals("ALL")) {
+    		AttrVal quarter = new AttrVal();
+    		quarter.type = "String";
+    		quarter.attr = "quarter";
+    		quarter.val = q;
+        	match.add(quarter);
+    	}
+    	
+    	
+    	List<Course> results = dbc.getCoursesThatMatch(match);
+    	for (int i=0; i<results.size(); i++) {
+    		System.out.println(""+i+": "+results.get(i).code);
+    	}
+    	return results;
+	}
+	public String getTags(MaxentTagger tagger, String str) {
 		StringTokenizer st = new StringTokenizer(" "+tagger.tagString(str) + " ");
 		String tags = " ";
 	     while (st.hasMoreTokens()) {
@@ -272,5 +274,27 @@ public class keywordSearch {
 		
 	}
 	
+	public String getCodeDept(String code)
+	{
+		String deptCode = "NOT FOUND";
+	     for (int j=0; j<code.length(); j++) {
+	    	 if (Character.isDigit(code.charAt(j))) {
+	    		 deptCode = new String(code.substring(0,j));
+	    		 break;
+	    	 }
+	     }
+	     return deptCode.toUpperCase();
+	}
+	
+	public String getCodeNum(String code) {
+		String codeNum = "NOT FOUND";
+	     for (int j=0; j<code.length(); j++) {
+	    	 if (Character.isDigit(code.charAt(j))) {
+	    		 codeNum = new String(code.substring(j));
+	    		 break;
+	    	 }
+	     }
+	     return codeNum.toUpperCase();
+	}
 	
 }

@@ -32,13 +32,16 @@ public class dataProcessor {
 	public static float FREQ_FACTOR = (float) .3;
 	public static float PREREQ_FACTOR = (float) .4;
 	
+	public Map<String, Integer> GERNUM;
+	
 	public dataProcessor() {
 		dbc = new DBConnection();
 		dbLock = new Object();
 		//calculateAverageRatings();
 		//generateCourseData();
 		//generatePrelimScores();
-		makeSumTags();
+		//makeSumTags();
+		addPrereqLists();
 	}
 	
 	private void makeSumTags() {
@@ -76,6 +79,27 @@ public class dataProcessor {
 				
 				update.add(a1);
 				dbc.updateAttributesWhere("rhun_courses", match, update);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Unable to get course codes.");			
+		}
+		
+	}
+	
+	private void addPrereqLists() {
+		try {
+			Statement stmt = dbc.con.createStatement();
+			stmt.executeQuery("USE " + dbc.database);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_course_prereqs;" );
+			int i=0;
+			while(rs.next()){
+				String preStr = rs.getString("prereqCode");
+				String code = rs.getString("code");
+				if (preStr!=null && !preStr.equals("")) {
+					dbc.updateAttributeWhere("rhun_courses", "code", "'"+code.trim()+"'", "prereqs", "'"+preStr+"'");
+				}
+				
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -170,6 +194,9 @@ public class dataProcessor {
 		Map<String, Integer> wMap = new TreeMap<String, Integer>();
 		ValueComparator comp =  new ValueComparator(wMap);
 		Map<String, Integer> sortedWork = new TreeMap<String, Integer>(comp);
+		
+		//GER data
+		Map<String, String> GERS = getGERS();
 		
 		//Map<String, Float> 
 		Map<String, Integer> revMap = new HashMap<String, Integer>();
@@ -430,6 +457,22 @@ public class dataProcessor {
 				a11.attr = "nScore";
 				a11.val = ""+nScore;
 				
+				AttrVal a12 = new AttrVal();
+				a12.type = "String";
+				a12.attr = "GERS";
+				a12.val = ""+GERS.get(c.code);
+				
+				
+				Integer numGERS = GERNUM.get(c.code);
+				if (numGERS==null)
+					numGERS=0;
+				if (numGERS>0) 
+					System.out.println(""+c.code+" : "+GERS.get(c.code));
+				AttrVal a13 = new AttrVal();
+				a13.type = "int";
+				a13.attr = "numGERS";
+				a13.val = ""+(numGERS*50);
+				/*
 				update.add(a1);
 				update.add(a2);
 				//update.add(a3);
@@ -440,7 +483,10 @@ public class dataProcessor {
 				update.add(a8);
 				update.add(a9);
 				update.add(a10);
-				update.add(a11);
+				update.add(a11);*/
+				
+				update.add(a12);
+				update.add(a13);
 				dbc.updateAttributesWhere("rhun_courses", match, update);
 			     
 			     
@@ -486,8 +532,9 @@ public class dataProcessor {
             num++;
         }
 		//System.out.println("Num classes: "+num);
-		
-		
+		if (true)
+			return;
+		//////////////////////////
 		System.out.println("Done tagging");
 		System.err.println("Starting prereq map recursion");
 		Set<String> keys = reqMap.keySet();
@@ -535,6 +582,50 @@ public class dataProcessor {
 	}
 	
 	
+	private Map<String, String> getGERS() {
+		Map<String, String> GERS = new HashMap<String, String>();
+		Map<Integer, String> GERID = new HashMap<Integer, String>();
+		GERNUM = new HashMap<String, Integer>();
+		try {
+			Statement stmt = dbc.con.createStatement();
+			stmt.executeQuery("USE " + dbc.database);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs;" );
+			
+			while(rs.next()){
+				String name = rs.getString("name").trim();
+				int id = rs.getInt("ID");
+				GERID.put(id, name);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Unable to get GER codes.");			
+		}
+		
+		
+		try {
+			Statement stmt = dbc.con.createStatement();
+			stmt.executeQuery("USE " + dbc.database);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_course_reqs;" );
+			
+			while(rs.next()){
+				String name = rs.getString("code").trim();
+				int id = rs.getInt("reqID");
+				if (GERS.containsKey(name)) {
+					GERS.put(name, GERS.get(name)+" "+GERID.get(id));
+					GERNUM.put(name, GERNUM.get(name)+1);
+				} else {
+					GERS.put(name, GERID.get(id));
+					GERNUM.put(name, 1);
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Unable to get GER codes.");			
+		}
+		
+		return GERS;
+	}
+
 	private float calculateNScore(float freq, Float revs) {
 		return freq*FREQ_FACTOR+revs*REVIEWS_FACTOR;
 	}

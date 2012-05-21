@@ -230,10 +230,10 @@ public class AxessConnect {
         
 	
     public static void main(String[] args) throws Exception {
-        AxessConnect a = new AxessConnect("eaconte","mttresp1");
+        /*AxessConnect a = new AxessConnect("eaconte","mttresp1");
         
         keywordSearch k = new keywordSearch(a.getCourses(), "CS");
-        //k.search("computer networks");
+        k.search("cs106a", "ALL");*/
     }
     
     public static String getToken(String str, String start, String end) {
