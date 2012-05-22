@@ -41,6 +41,10 @@ public class Course {
 	public String titleTags;
 	public String deptTags;
 	public String allTags;
+	public String deptCode;
+	public int deptNum;
+	
+	public float relevance;
 	
 	
 	/* Stored in other tables */

@@ -357,9 +357,11 @@ public class DBConnection {
 						  rs.getString("grading"), rs.getString("lectureDays"), rs.getInt("numReviews"), 
 						  rs.getInt("numUnits"), rs.getDouble("rating"), rs.getInt("timeBegin"), 
 						  rs.getInt("timeEnd"), rs.getString("tags"), rs.getString("type"), rs.getInt("workload"));
-				c.allTags="";
-				c.titleTags="";
-				c.deptTags="";
+				c.allTags=rs.getString("allTags");
+				c.titleTags=rs.getString("titleTags");
+				c.deptTags=rs.getString("deptTags");
+				c.deptCode = rs.getString("deptCode");
+				c.deptNum = rs.getInt("cnum");
 				c.nScore=rs.getFloat("nScore");
 				c.wScore=rs.getFloat("wScore");
 				c.qScore=rs.getFloat("qScore");
@@ -390,7 +392,8 @@ public class DBConnection {
 		List<String> prereqs = new ArrayList<String>();
 		String[] reqArray = reqs.split(",");
 		for (int i=0; i<reqArray.length || i==0; i++) {
-			prereqs.add(reqArray[i]);
+			if (!reqArray[i].equals(""))
+				prereqs.add(reqArray[i]);
 		}
 		return prereqs;
 	}

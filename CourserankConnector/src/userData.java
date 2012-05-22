@@ -20,6 +20,8 @@ public class userData {
 	
 	private static DBConnection dbc;
 	public static Object dbLock;
+	public static int DEFAULT_RECURSION_DEPTH = 10;
+	public static int DEFAULT_INTERESTED_WORDS = 10;
 	
 	public Map<String, Integer> keywords;
 	public Set<String> courses;
@@ -32,6 +34,7 @@ public class userData {
 	public Set<String> commonWords;
 	public AxessConnect a = null;
 	public List<String> coursesTaken = null;
+	public String courseString;
 	
 	public userData(String uname, String pword) {
 		this.uname = uname;
@@ -48,11 +51,12 @@ public class userData {
 		dbLock = new Object();
 		
 		keywords = new HashMap<String, Integer>();
-		ValueComparator bvc =  new ValueComparator(keywords, true);
+		ValueComparator bvc =  new ValueComparator(keywords);
 		sortedWords = new TreeMap<String, Integer>(bvc);
 		depts = new HashMap<String, Integer>();
-		ValueComparator mvc =  new ValueComparator(depts, true);
+		ValueComparator mvc =  new ValueComparator(depts);
 		sortedDepts = new TreeMap<String, Integer>(mvc);
+		courseString = ",";
 		//this.major = major;
 		 
 		
@@ -115,6 +119,8 @@ public class userData {
 			
 			courses.add(code);
 			
+			courseString = courseString +code+",";
+			
 			if (!depts.containsKey(dept)) {
 				depts.put(dept, 1);
 			} else {
@@ -136,6 +142,22 @@ public class userData {
 						for (int j=0; j<gersTaken.length || j==0; j++) {
 							gers.remove(gersTaken[j]);
 						}
+					}
+					String prereqs = rs.getString("prereqs");
+					if (!prereqs.equals("")) {
+						String recPrereqs = recursiveGetPrereqs(prereqs, DEFAULT_RECURSION_DEPTH);
+						//System.out.println("Normal: "+prereqs);
+						//System.out.println("Recurse: "+recPrereqs);
+						String[] prereqArray = recPrereqs.split(",");
+						for (int j=0; j<prereqArray.length; j++) {
+							String req = prereqArray[j];
+							/*if (!prereqs.contains(req))
+								System.out.println("UNIQUE RECURSION REQ FOUND: "+req);*/
+							if (!courseString.contains(","+req+","))
+								courseString = courseString+req+",";
+						}
+						//courseString = courseString+recPrereqs;
+						//courseString=courseString+prereqs+",";
 					}
 					System.out.println("Found course tags: "+tags);
 				} else {
@@ -163,6 +185,9 @@ public class userData {
 		    
 		}
 		
+		
+		
+		
 		for (Map.Entry<String, Integer> e : keywords.entrySet()) {
 			sortedWords.put(e.getKey(), e.getValue());
 		}
@@ -182,7 +207,41 @@ public class userData {
 		for (int i=0; i<gers.size(); i++) {
 			System.out.println(gers.get(i));
 		}
+		
+		System.err.println("Course String: "+courseString);
 	}
+	private String recursiveGetPrereqs(String prereqs, int depth) {
+		if (prereqs==null || prereqs.equals("") || depth==0)
+			return "";
+		String[] reqs = prereqs.split(",");
+		String prereqStr="";
+		for (int i=0; i<reqs.length; i++) {
+			String req = reqs[i];
+			prereqStr=prereqStr+req+",";
+			prereqStr=prereqStr+recursiveGetPrereqs(getPrereqs(req), depth-1);
+		}
+		return prereqStr;
+	}
+
+	private String getPrereqs(String ccode) {
+		List<AttrVal> match = new ArrayList<AttrVal>();
+		AttrVal code = new AttrVal();
+    	code.type = "String";
+    	code.attr = "code";
+    	code.val = ccode;
+    	match.add(code);
+    	
+    	List<AttrVal> request = new ArrayList<AttrVal>();
+		AttrVal prereqs = new AttrVal();
+		prereqs.type = "String";
+		prereqs.attr = "prereqs";
+    	request.add(prereqs);
+    	List<List<AttrVal>> results = dbc.getAttributesThatMatch("rhun_courses", request, match, false, "");
+    	if (results==null || results.get(0)==null || results.get(0).get(0)==null)
+    		System.err.println("WOAH BIG ERROR");
+    	return results.get(0).get(0).val;
+	}
+
 	private List<String> getAllGERS() {
 		List<String> GERS = new ArrayList<String>();
 		try {
@@ -271,6 +330,9 @@ public class userData {
         Schedule s = new Schedule();
         s.addItem("CS244", "01010", 1250, 1405);
         //s.addItem("ALLTIME", "11111", 0, 2400);
-        k.search("computer networks", "Spring", true, true,null,s);
+        searchFactors f = new searchFactors();
+        f.setFactor("RELEVANCE", 1);
+        f.setFactor("INTEREST", 1);
+        k.search("computer networks", "ALL",f,s);
     }
 }
