@@ -29,6 +29,7 @@ public class userData {
 	public Map<String, Integer> depts;
 	public Map<String, Integer> sortedWords;
 	public Map<String, Integer> sortedDepts;
+	
 	public MaxentTagger tagger;
 	public Map<String, String> deptTags;
 	public Set<String> commonWords;
@@ -36,38 +37,22 @@ public class userData {
 	public List<String> coursesTaken = null;
 	public String courseString;
 	
+	public int earliestYear = 3000;
+	public int latestYear = 0;
+	public Map<String, Integer> deptNums;
+	public Map<String, Integer> deptYearTotal;
+	public Map<String, Integer> deptLatestYear;
+	
 	public userData(String uname, String pword) {
+		
 		this.uname = uname;
 		this.pword = pword;
-		try {
-			a = new AxessConnect(uname,pword);
-			coursesTaken = a.getCourses();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
-		dbc = new DBConnection();
-		dbLock = new Object();
-		
-		keywords = new HashMap<String, Integer>();
-		ValueComparator bvc =  new ValueComparator(keywords);
-		sortedWords = new TreeMap<String, Integer>(bvc);
-		depts = new HashMap<String, Integer>();
-		ValueComparator mvc =  new ValueComparator(depts);
-		sortedDepts = new TreeMap<String, Integer>(mvc);
-		courseString = ",";
-		//this.major = major;
-		 
-		
-		commonWords = getCommonWords();
-		
-		courses = new HashSet<String>();
-		
-		
+		initDataStructures();
 		
 		try {
 			tagger = new MaxentTagger("models/english-left3words-distsim.tagger");
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -75,6 +60,21 @@ public class userData {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		generateUserData(coursesTaken);
+		
+	}
+	
+	public userData(String uname, String pword,MaxentTagger tagger) {
+		this.uname = uname;
+		this.pword = pword;
+		
+		
+		initDataStructures();
+		
+		this.tagger = tagger;
+		
+		
 		
 		generateUserData(coursesTaken);
 	}
@@ -96,14 +96,56 @@ public class userData {
 		}
 		return s;
 	}
+	public void initDataStructures() {
+		try {
+			a = new AxessConnect(this.uname,this.pword);
+			coursesTaken = a.getCourses();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		dbc = new DBConnection();
+		dbLock = new Object();
+		
+		keywords = new HashMap<String, Integer>();
+		ValueComparator bvc =  new ValueComparator(keywords);
+		sortedWords = new TreeMap<String, Integer>(bvc);
+		depts = new HashMap<String, Integer>();
+		ValueComparator mvc =  new ValueComparator(depts);
+		sortedDepts = new TreeMap<String, Integer>(mvc);
+		deptLatestYear = new HashMap<String, Integer>();
+		deptNums = new HashMap<String, Integer>();
+		deptYearTotal = new HashMap<String, Integer>();
+		courseString = ",";
+		//this.major = major;
+		 
+		
+		commonWords = getCommonWords();
+		
+		courses = new HashSet<String>();
+	}
 	private void generateUserData(List<String> coursesTaken) {
 		getDeptTags();
 		List<String> gers = getAllGERS();
-		for (int i=0; i<coursesTaken.size(); i++) {
-			String c = coursesTaken.get(i);
+		for (int i=1; i<coursesTaken.size(); i++) {
+			String c = coursesTaken.get(i).split(a.SEPARATOR)[0];
+			int year = Integer.parseInt(coursesTaken.get(i).split(a.SEPARATOR)[1]);
+			
+			if (year < earliestYear) {
+				earliestYear = year;
+			}
+			if (year > latestYear) {
+				latestYear = year;
+				
+			}
+ 			System.out.println(year);
+			
 			int index = c.indexOf(":");
 			String code = new String(c.substring(0,index).trim());
 			String dept = new String(code.substring(0, code.indexOf(" ")));
+
+			
 			
 			if (dept.equals("UGTEST"))
 				continue;
@@ -112,6 +154,8 @@ public class userData {
 				System.err.println("Did not find dept: "+dept);
 				continue;
 			}
+			
+			int num = Integer.parseInt(getCodeNum(code));
 			
 			String title = new String(c.substring(index+1));
 			
@@ -126,6 +170,22 @@ public class userData {
 			} else {
 				depts.put(dept, depts.get(dept)+1);
 			}
+			
+			if (!deptLatestYear.containsKey(dept) || year > deptLatestYear.get(dept)) {
+				deptLatestYear.put(dept, year);
+				deptNums.put(dept, num);
+				deptYearTotal.put(dept, 1);
+			} else if (year == deptLatestYear.get(dept)) {
+				int deptTotal = 1;
+				int deptNum = num;
+				if (deptNums.containsKey(dept)) {
+					deptNum = deptNums.get(dept)+num;
+					deptTotal = deptYearTotal.get(dept)+1;
+				}
+				deptNums.put(dept, deptNum);
+				deptYearTotal.put(dept, deptTotal);
+			}
+			
 			System.err.println("Searching for course: "+code);
 			String tags="";
 			String GERS = "";
@@ -199,9 +259,10 @@ public class userData {
 		}
 		for (Map.Entry<String, Integer> e : sortedDepts.entrySet()) {
 			System.out.println(e.getKey()+" : "+e.getValue());
+			System.out.println("Average course number for dept: "+((float)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey())));
 		}
 		Object[] deptArray = sortedDepts.keySet().toArray();
-		major = (String) deptArray[deptArray.length-1];
+		major = (String) deptArray[0];
 		System.err.println("Major: "+major);
 		System.out.println("GERS Remaining:");
 		for (int i=0; i<gers.size(); i++) {
@@ -313,26 +374,41 @@ public class userData {
 	
 	public String getCodeNum(String code) {
 		String codeNum = "NOT FOUND";
+		String num="";
 	     for (int j=0; j<code.length(); j++) {
 	    	 if (Character.isDigit(code.charAt(j))) {
-	    		 codeNum = new String(code.substring(j));
-	    		 break;
+	    		 num= num+code.charAt(j);
 	    	 }
 	     }
-	     return codeNum.toUpperCase();
+	     if (num.equals(""))
+	    	 return codeNum;
+	     return num;
 	}
 	
 	public static void main(String[] args) throws Exception {
-        userData u  = new userData("eaconte","mttresp1");
+		MaxentTagger t = null;
+		try {
+			t = new MaxentTagger("models/english-left3words-distsim.tagger");
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+        userData u  = new userData("eaconte","mttresp1",t);
         
-        keywordSearch k = new keywordSearch(u, "CS");
+        keywordSearch k = new keywordSearch(u.tagger);
         
         Schedule s = new Schedule();
         s.addItem("CS244", "01010", 1250, 1405);
+        s.addItem("No Fridays", "00001", 0, 2400);
         //s.addItem("ALLTIME", "11111", 0, 2400);
         searchFactors f = new searchFactors();
         f.setFactor("RELEVANCE", 1);
         f.setFactor("INTEREST", 1);
-        k.search("computer networks", "ALL",f,s);
+        k.search(u,"computer networks", "ALL",f,s);
     }
 }

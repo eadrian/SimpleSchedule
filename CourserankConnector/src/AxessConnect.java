@@ -30,6 +30,7 @@ import org.apache.http.util.EntityUtils;
 public class AxessConnect {
 	private String uname;
 	private String pass;
+	public static String SEPARATOR = " %%% ";
 	public AxessConnect(String uname, String pass) throws Exception {
 		this.uname = uname;
 		this.pass = pass;
@@ -211,12 +212,15 @@ public class AxessConnect {
             EntityUtils.consume(entity);
             
             String[] courses = page.split("id='CRSE_NAME");
-            for (int i=0; i<courses.length; i++) {
+            for (int i=1; i<courses.length; i++) {
             	String cname = getToken(courses[i], "'>", "</span");
             	String title = getToken(courses[i],"PSHYPERLINK\' >", "<");
-            
+            	String years = getToken(courses[i],"id=\'CRSE_TERM$","-");
+            	years = new String(years.substring(years.indexOf(">")+1));
+            	
             	System.out.println(cname+" : "+title);
-            	coursesTaken.add(cname+" : "+title);
+            	System.out.println(years);
+            	coursesTaken.add(cname+" : "+title+SEPARATOR+years);
             }
             return coursesTaken;
             
@@ -242,7 +246,7 @@ public class AxessConnect {
     	if (index == -1)
     		return "NOT FOUND";
     	index += Patt.length();
-    	String token = str.substring(index, index+str.substring(index).indexOf(end));
+    	String token = new String(str.substring(index, index+str.substring(index).indexOf(end)));
     	return token.trim();
     }
 }

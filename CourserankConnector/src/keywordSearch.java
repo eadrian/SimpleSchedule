@@ -24,44 +24,34 @@ public class keywordSearch {
 	public static Object dbLock;
 	private MaxentTagger tagger;
 	
-	public userData data;
 	
 	
 	public static float DEFAULT_MAX_SCORE = 100;
 	public static float REL_MAX = DEFAULT_MAX_SCORE;
 	
-	public keywordSearch (userData u, String major) {
+	public keywordSearch (MaxentTagger tagger) {
 		dbc = new DBConnection();
 		dbLock = new Object();
-		data = u;
 		
 		
 		
 		
-		try {
-			tagger = new MaxentTagger("models/english-left3words-distsim.tagger");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		this.tagger = tagger;
 		
 	}
 	
-	public void search(String search, String quarter, searchFactors factors, Schedule sched) {
+	public void search(userData u,String search, String quarter, searchFactors factors, Schedule sched) {
 		List<Course> results = searchForCourses(search, quarter);
 		for (int i=0; i<results.size(); i++) {
 			System.out.println(results.get(i).code);
 		}
 		
-		sortResults(results, sched, factors, search);
+		sortResults(u,results, sched, factors, search);
 		
 		
 	}
 	
-	private void sortResults(List<Course> results, Schedule sched, searchFactors factors, String search) {
+	private void sortResults(userData data, List<Course> results, Schedule sched, searchFactors factors, String search) {
 		Map<String, Course> courseMap = new HashMap<String, Course>();
 		Map<String, Float> scoreMap = new HashMap<String, Float>();
 		FloatComparator fvc =  new FloatComparator(scoreMap);
@@ -71,7 +61,7 @@ public class keywordSearch {
 		for (int i=0; i<results.size(); i++) {
 			Course c = results.get(i);
 			
-			float score = scoreCourse(c, sched, factors, search);
+			float score = scoreCourse(data,c, sched, factors, search);
 			
 			courseMap.put(c.code, c);
 			scoreMap.put(c.code, score);
@@ -88,7 +78,7 @@ public class keywordSearch {
 		
 	}
 
-	private float scoreCourse(Course c,Schedule sched, searchFactors factors, String search) {
+	private float scoreCourse(userData data, Course c,Schedule sched, searchFactors factors, String search) {
 		System.out.println("Trying to fit: "+c.code);
 		if (sched.checkFit(c.code,c.lectureDays, c.timeBegin, c.timeEnd)) {
 			
@@ -117,14 +107,14 @@ public class keywordSearch {
 		
 		if (factors.factorWeight.get("INTEREST")>0) {
 			System.out.println("Determining Interest");
-			float interest = calculateInterest(c);
+			float interest = calculateInterest(data,c);
 			System.out.println("Interest in "+c.code+" : "+interest);
 			totalScore+=interest * factors.factorWeight.get("INTEREST");
 		}
 		return totalScore;
 	}
 
-	private float calculateInterest(Course c) {
+	private float calculateInterest(userData data, Course c) {
 		int i=0;
 		int total = 0;
 		List<String> interestedWords = new ArrayList<String>();
