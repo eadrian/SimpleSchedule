@@ -3,6 +3,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,7 @@ public class userData {
 	public Map<String, Integer> depts;
 	public Map<String, Integer> sortedWords;
 	public Map<String, Integer> sortedDepts;
+	public Map<String, Float> expectedCourses;
 	
 	public MaxentTagger tagger;
 	public Map<String, String> deptTags;
@@ -39,9 +41,14 @@ public class userData {
 	
 	public int earliestYear = 3000;
 	public int latestYear = 0;
+	public String YEAR = "";
 	public Map<String, Integer> deptNums;
 	public Map<String, Integer> deptYearTotal;
 	public Map<String, Integer> deptLatestYear;
+	public String rejectedCourses = ",";
+	
+	public List<String> gers;
+	public String GERSNeeded = "";
 	
 	public userData(String uname, String pword) {
 		
@@ -62,6 +69,16 @@ public class userData {
 		}
 		
 		generateUserData(coursesTaken);
+		int years = latestYear - earliestYear;
+		if (years==3) {
+			YEAR = "SENIOR";
+		} else if (years==2) {
+			YEAR = "JUNIOR";
+		} else if (years==1) {
+			YEAR = "SOPHOMORE";
+		} else if (years==0) {
+			YEAR = "FRESHMAN";
+		}
 		
 	}
 	
@@ -117,6 +134,7 @@ public class userData {
 		deptLatestYear = new HashMap<String, Integer>();
 		deptNums = new HashMap<String, Integer>();
 		deptYearTotal = new HashMap<String, Integer>();
+		expectedCourses = new HashMap<String, Float>();
 		courseString = ",";
 		//this.major = major;
 		 
@@ -127,7 +145,7 @@ public class userData {
 	}
 	private void generateUserData(List<String> coursesTaken) {
 		getDeptTags();
-		List<String> gers = getAllGERS();
+		gers = getAllGERS();
 		for (int i=1; i<coursesTaken.size(); i++) {
 			String c = coursesTaken.get(i).split(a.SEPARATOR)[0];
 			int year = Integer.parseInt(coursesTaken.get(i).split(a.SEPARATOR)[1]);
@@ -172,10 +190,12 @@ public class userData {
 			}
 			
 			if (!deptLatestYear.containsKey(dept) || year > deptLatestYear.get(dept)) {
+				System.out.println(""+code+" : "+year);
 				deptLatestYear.put(dept, year);
 				deptNums.put(dept, num);
 				deptYearTotal.put(dept, 1);
 			} else if (year == deptLatestYear.get(dept)) {
+				System.out.println(""+code+" : "+year);
 				int deptTotal = 1;
 				int deptNum = num;
 				if (deptNums.containsKey(dept)) {
@@ -259,13 +279,20 @@ public class userData {
 		}
 		for (Map.Entry<String, Integer> e : sortedDepts.entrySet()) {
 			System.out.println(e.getKey()+" : "+e.getValue());
+			expectedCourses.put(e.getKey(), ((float)e.getValue()/((latestYear-earliestYear+1)*3)));
+			System.out.println("Expected Courses for "+e.getKey()+" : "+expectedCourses.get(e.getKey()));
 			System.out.println("Average course number for dept: "+((float)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey())));
+			System.out.println("Avg Rounded: "+roundDownHundred(((int)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey()))));
+			deptNums.put(e.getKey(), roundDownHundred(((int)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey()))));
 		}
 		Object[] deptArray = sortedDepts.keySet().toArray();
 		major = (String) deptArray[0];
 		System.err.println("Major: "+major);
 		System.out.println("GERS Remaining:");
 		for (int i=0; i<gers.size(); i++) {
+			if (i==0)
+				GERSNeeded = ",";
+			GERSNeeded = GERSNeeded + gers.get(i)+",";
 			System.out.println(gers.get(i));
 		}
 		
@@ -385,6 +412,10 @@ public class userData {
 	     return num;
 	}
 	
+	public void rejectCourse(String code) {
+		this.rejectedCourses= this.rejectedCourses+code+",";
+	}
+	
 	public static void main(String[] args) throws Exception {
 		MaxentTagger t = null;
 		try {
@@ -399,16 +430,41 @@ public class userData {
 		}
 		
         userData u  = new userData("eaconte","mttresp1",t);
-        
+        u.rejectCourse("CS 181");
         keywordSearch k = new keywordSearch(u.tagger);
+        ScheduleFiller sf = new ScheduleFiller();
         
         Schedule s = new Schedule();
         s.addItem("CS244", "01010", 1250, 1405);
         s.addItem("No Fridays", "00001", 0, 2400);
         //s.addItem("ALLTIME", "11111", 0, 2400);
         searchFactors f = new searchFactors();
-        f.setFactor("RELEVANCE", 1);
-        f.setFactor("INTEREST", 1);
-        k.search(u,"computer networks", "ALL",f,s);
+        //f.setFactor("RELEVANCE", 1);
+        f.setFactor("INTEREST", 2);
+        f.setFactor("LEVEL", 1);
+        f.setFactor("GERS", 1);
+        f.setFactor("WORK", 1);
+        f.setFactor("POPULARITY", 1);
+        f.setFactor("INDEPENDENT", 1);
+        f.setFactor("PROJECT", 1);
+        f.setFactor("TOTAL", 1);
+        List<String> barredCourses = new ArrayList<String>();
+        barredCourses.add("CS 198");
+        
+        TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses);
+        
+        sf.getBestCourse(u, tdata, f, "Spring", 2012);
+        if (true)
+        	return;
+        
+        
+        Date start = new Date();
+        k.search(u,"politics", "ALL",f,s);
+        Date finish = new Date();
+		System.err.println("Time to search for courses: "+(float)((finish.getTime()-start.getTime())/1000f));
     }
+	
+	public int roundDownHundred(int num) {
+		return num/100;
+	}
 }

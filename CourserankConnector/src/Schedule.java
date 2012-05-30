@@ -3,9 +3,12 @@ import java.util.List;
 
 
 public class Schedule {
-	private List<scheduleItem> items;
+	public List<scheduleItem> items;
 	public Schedule() {
 		items = new ArrayList<scheduleItem>();
+	}
+	public Schedule(Schedule sched) {
+		items = new ArrayList<scheduleItem>(sched.items);
 	}
 	public boolean addItem(String name, String day, int start, int end) {
 		if (!checkFit(name,day, start, end)) {

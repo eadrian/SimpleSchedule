@@ -43,6 +43,7 @@ public class Course {
 	public String allTags;
 	public String deptCode;
 	public int deptNum;
+	public float totalScore;
 	
 	public float relevance;
 	
@@ -220,5 +221,6 @@ public class Course {
 		}
 		return n;
 	}
+	
 	
 }

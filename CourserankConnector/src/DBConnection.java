@@ -325,11 +325,26 @@ public class DBConnection {
 	public List<Course> getCoursesThatMatchSorted(List<AttrVal> match, boolean sort, String attr) {
 		
 		List<Course> results = new ArrayList<Course>();
-	    
+	    boolean lastOr = false;
+	   
 	    // Construct the query
 		String query = "SELECT * FROM rhun_courses WHERE ";
 		String and = "";
-	    for (int i=0; i<match.size(); i++) {								// for each attr-value pair
+	    for (int i=0; i<match.size(); i++) { // for each attr-value pair
+	    	if (i>0 && match.get(i).or) {
+	    		
+	    		if (!lastOr) {
+	    			and= and+"(";
+	    		} else {
+	    			and = "OR ";
+	    		}
+	    		lastOr= true;
+	    	} else {
+	    		lastOr = false;
+	    		if (lastOr) {
+	    			and = ") "+and;
+	    		}
+	    	}
 	        if (match.get(i).type.equals("String")) {
 	        	if (!match.get(i).like)
 	        		query += and + match.get(i).attr + " = '" + match.get(i).val + "' ";
@@ -339,6 +354,10 @@ public class DBConnection {
 	        	query += and + match.get(i).attr + " = " + match.get(i).val + " ";
 	        }
 			and = "AND ";
+			
+	    }
+	    if (lastOr) {
+	    	query = query + ")";
 	    }
 	    if (sort) {
 	    	query= query + " ORDER BY "+attr;
@@ -370,9 +389,81 @@ public class DBConnection {
 				c.preScore=rs.getFloat("preScore");
 				c.numPrereqs=rs.getInt("NumPrereqs");
 				c.GERScore=rs.getInt("numGERS");
-				c.universityReqs = rs.getString("prereqs");
+				c.universityReqs = rs.getString("GERS");
 				c.prereqs = parsePrereqs(rs.getString("prereqs"));
+				c.quarter = rs.getString("quarter");
 				results.add(c);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Was not able to retrieve courses that match");
+		}
+	    if (results.size()==0)
+	    	return null;
+    	else {
+    		System.out.println("Returning results");
+	    	return results;
+	    	
+    	}
+		
+	}
+	
+public List<Course> getCoursesThatMatchSortedLim(List<AttrVal> match, boolean sort, String attr, int Lim) {
+		
+		List<Course> results = new ArrayList<Course>();
+	    
+	    // Construct the query
+		String query = "SELECT * FROM rhun_courses WHERE ";
+		String and = "";
+	    for (int i=0; i<match.size(); i++) {								// for each attr-value pair
+	        if (match.get(i).type.equals("String")) {
+	        	if (!match.get(i).like)
+	        		query += and + match.get(i).attr + " = '" + match.get(i).val + "' ";
+	        	else 
+	        		query += and + match.get(i).attr + " LIKE '" + match.get(i).val + "' ";
+	        } else if (match.get(i).type.equals("int")|| match.get(i).type.equals("float")) {
+	        	query += and + match.get(i).attr + " = " + match.get(i).val + " ";
+	        }
+			and = "AND ";
+	    }
+	    if (sort) {
+	    	query= query + " ORDER BY "+attr+ " DESC";
+	    }
+		
+		System.err.println("Executing query: "+query);
+	    int counter = 0;
+	    try {
+			Statement stmt = con.createStatement();
+			stmt.executeQuery("USE " + database);
+			ResultSet rs = stmt.executeQuery(query);
+			while (rs.next()) {
+				//System.out.println(".");
+				Course c = new Course(rs.getInt("ID"), rs.getString("avgGrade"), rs.getString("code"), 
+						  rs.getString("description"), rs.getInt("deptID"), rs.getString("title"),
+						  rs.getString("grading"), rs.getString("lectureDays"), rs.getInt("numReviews"), 
+						  rs.getInt("numUnits"), rs.getDouble("rating"), rs.getInt("timeBegin"), 
+						  rs.getInt("timeEnd"), rs.getString("tags"), rs.getString("type"), rs.getInt("workload"));
+				c.allTags=rs.getString("allTags");
+				c.titleTags=rs.getString("titleTags");
+				c.deptTags=rs.getString("deptTags");
+				c.deptCode = rs.getString("deptCode");
+				c.deptNum = rs.getInt("cnum");
+				c.nScore=rs.getFloat("nScore");
+				c.wScore=rs.getFloat("wScore");
+				c.qScore=rs.getFloat("qScore");
+				c.tScore=rs.getFloat("tScore");
+				c.majorTScore=rs.getFloat("MajorTScore");
+				c.preScore=rs.getFloat("preScore");
+				c.numPrereqs=rs.getInt("NumPrereqs");
+				c.GERScore=rs.getInt("numGERS");
+				c.universityReqs = rs.getString("GERS");
+				c.prereqs = parsePrereqs(rs.getString("prereqs"));
+				c.quarter = rs.getString("quarter");
+				counter++;
+				if (counter <= Lim)
+					results.add(c);
+				else 
+					return results;
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
