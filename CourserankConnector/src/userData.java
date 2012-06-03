@@ -457,9 +457,8 @@ public class userData {
         f.setFactor("TOTAL", 1);
         List<String> barredCourses = new ArrayList<String>();
         barredCourses.add("CS 198");
-
         MajorReqs mr = new MajorReqs("Systems", u);	// major requirements
-        
+
         TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses);
 
 		Iterator<String> iter = mr.reqsNeeded.iterator();
@@ -467,7 +466,7 @@ public class userData {
 			System.out.println("Requirement left: " + iter.next());
 		}
 		
-        sf.getBestCourse(u, tdata, f, "Spring", 2012);
+        //sf.getBestCourse(u, tdata, f, "Spring", 2012);
         
 
         if (true)

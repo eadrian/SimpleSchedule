@@ -614,7 +614,49 @@ public List<Course> getCoursesThatMatchSortedLim(List<AttrVal> match, boolean so
 			}
 		}
 	}
+
+
+	public String getRarestReq(List<Integer> allReqs, String classTaken) {
+		String rarestReq = "";
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeQuery("USE " + database);
+			
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs,rhun_course_reqs WHERE code = '" + classTaken + "' AND rhun_reqs.ID = rhun_course_reqs.reqID AND reqID > 9 GROUP BY ID ORDER BY size asc");
+			boolean reqFound = false;
+			int reqFulfilled = 0; 
+			while(rs.next() && !reqFound){
+				reqFulfilled = Integer.parseInt(rs.getString("ID"));
+				// remove that req from the reqs_needed
+				for (int i = 0; i < allReqs.size(); i++) {
+					if (allReqs.get(i) == reqFulfilled) {
+						rarestReq = getAttribute("rhun_reqs", allReqs.get(i), "name");
+						reqFound = true;
+						break;
+					}
+				}
+			}		
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Was not able to modify list of requirements.");			
+		}
+		return rarestReq;
+	}
 	
-	
+	public List<String> getCoursesThatFulfillMR(String reqName) {
+		List<String> coursesFulfilling = new ArrayList<String>();
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeQuery("USE " + database);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_course_reqs, rhun_reqs WHERE rhun_reqs.ID = rhun_course_reqs.reqID AND name = '" + reqName + "'");
+			while(rs.next()) {
+				coursesFulfilling.add(rs.getString("code"));
+			}	
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Was not able to get courses fulfilling major requirements.");			
+		}
+		return coursesFulfilling;
+	}
 }
 

@@ -11,12 +11,15 @@ import java.util.Set;
 
 public class MajorReqs {
 	private static DBConnection dbc;
-	public static List<String> reqsNeeded = null;
+	public static List<String> reqsNeeded = null;			// stores list of names of fulfilled major requirements 
+	public static List<Integer> allReqs; 					// stores list of ids of all major requirements (fulfilled and unfulfilled)
 	
 	public MajorReqs(String major, userData ud) {
-	//public MajorReqs(String major, List<String> coursesTaken) {
-		reqsNeeded = new ArrayList<String>();
 		dbc = new DBConnection();
+		
+		reqsNeeded = new ArrayList<String>();
+		allReqs = new ArrayList<Integer>();	
+		
 		generateMajorReqsLeft(major, ud);
 	}
 	
@@ -30,30 +33,39 @@ public class MajorReqs {
 
 		// get list of requirement groups needed
 		List<Integer> allReqGroups = new ArrayList<Integer>();		// list of ids of reqGroups needed
-		allReqGroups = dbc.getAllReqGroups("Systems");
+		allReqGroups = dbc.getAllReqGroups(major);
 
 		// get list of all requirements needed
-		List<Integer> allReqs = new ArrayList<Integer>();	
 		allReqs = dbc.getAllReqs(allReqGroups);
 		
 		// modify list of requirements to only include ones unfulfilled
 		// mark off the requirements fulfilled by courses taken
-		dbc.checkOffReqs(allReqs, cTaken);	
+		dbc.checkOffReqs(allReqs, cTaken);							// checks off requirements based on rarity
 		// mark off requirements fulfilled by ap/ib tests
 		dbc.checkOffReqs_UGTests(allReqs, testsTaken);
 		
-		reqsNeeded = new ArrayList<String>();		// stores the names of the requirements to fulfill
+		reqsNeeded = new ArrayList<String>();						// stores the names of the requirements to fulfill
 		// get names
 		if (allReqs.size() == 0) System.out.println("No major reqs left to fulfill.");
 		for (int i = 0; i < allReqs.size(); i++) {
 			String reqName = dbc.getAttribute("rhun_reqs", allReqs.get(i), "name");
-			System.out.println("needed: " + reqName);
+			System.out.println("unfulfilled: " + reqName);
 			reqsNeeded.add(reqName);
 		}
 	}
 	
+	// returns the rarest major requirement that a given course fulfills
+	public static String getFulfilledReq(String courseCode) {
+		return dbc.getRarestReq(allReqs, courseCode);
+	}
+	
+	// returns list of course codes that fulfills a single major req passed in
+	public static List<String> getCoursesFulfillingMR(String majorReq) {
+		return dbc.getCoursesThatFulfillMR(majorReq);		
+	}
 
 	public static void main(String[] args) throws Exception {
+		// getting list of reqs still unfulfilled
 		Set<String> cTaken = new HashSet<String>();
 		List<String> testsTaken = new ArrayList<String>();
 		cTaken.add("CS 143");
@@ -67,10 +79,16 @@ public class MajorReqs {
 		cTaken.add("CS 106B");
 		cTaken.add("CS 147");
 		cTaken.add("CS 103");
-		//MajorReqs mr = new MajorReqs("Systems", cTaken);
 		reqsNeeded = new ArrayList<String>();
 		dbc = new DBConnection();
 		generateMajorReqsLeft("Systems", cTaken, testsTaken);
+		
+		// getting list of courses that fulfill a given major req
+		List<String> listReqsFulfilled = getCoursesFulfillingMR("Math Elective");
+		Iterator<String> iter = listReqsFulfilled.iterator();
+		while (iter.hasNext()) {
+			//System.out.println("Course that fulfills math elective: " + iter.next());
+		}
 	}
 
 }
