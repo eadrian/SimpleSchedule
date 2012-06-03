@@ -1,3 +1,4 @@
+package web;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -6,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +39,7 @@ public class userData {
 	public Set<String> commonWords;
 	public AxessConnect a = null;
 	public List<String> coursesTaken = null;
+	public List<String> UGTESTs = null;
 	public String courseString;
 	
 	public int earliestYear = 3000;
@@ -136,6 +139,7 @@ public class userData {
 		deptYearTotal = new HashMap<String, Integer>();
 		expectedCourses = new HashMap<String, Float>();
 		courseString = ",";
+		UGTESTs = new ArrayList<String>();
 		//this.major = major;
 		 
 		
@@ -164,9 +168,10 @@ public class userData {
 			String dept = new String(code.substring(0, code.indexOf(" ")));
 
 			
-			
-			if (dept.equals("UGTEST"))
+			if (dept.equals("UGTEST")) {
+				UGTESTs.add(code);
 				continue;
+			}
 			
 			if (!deptTags.containsKey(dept)) {
 				System.err.println("Did not find dept: "+dept);
@@ -430,6 +435,8 @@ public class userData {
 		}
 		
         userData u  = new userData("eaconte","mttresp1",t);
+        
+        
         u.rejectCourse("CS 181");
         keywordSearch k = new keywordSearch(u.tagger);
         ScheduleFiller sf = new ScheduleFiller();
@@ -450,18 +457,26 @@ public class userData {
         f.setFactor("TOTAL", 1);
         List<String> barredCourses = new ArrayList<String>();
         barredCourses.add("CS 198");
+
+        MajorReqs mr = new MajorReqs("Systems", u);	// major requirements
         
         TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses);
-        
+
+		Iterator<String> iter = mr.reqsNeeded.iterator();
+		while (iter.hasNext()) {
+			System.out.println("Requirement left: " + iter.next());
+		}
+		
         sf.getBestCourse(u, tdata, f, "Spring", 2012);
+        
+
         if (true)
         	return;
-        
-        
         Date start = new Date();
         k.search(u,"politics", "ALL",f,s);
         Date finish = new Date();
 		System.err.println("Time to search for courses: "+(float)((finish.getTime()-start.getTime())/1000f));
+        
     }
 	
 	public int roundDownHundred(int num) {
