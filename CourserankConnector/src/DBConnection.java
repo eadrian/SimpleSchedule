@@ -543,10 +543,10 @@ public List<Course> getCoursesThatMatchSortedLim(List<AttrVal> match, boolean so
 		Iterator<String> iterator = cTaken.iterator();
 		while (iterator.hasNext()) {			// iterate thru each class taken
 			String classTaken = iterator.next();
+			System.out.println("testing " + classTaken);
 			try {
 				Statement stmt = con.createStatement();
 				stmt.executeQuery("USE " + database);
-				
 				ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs,rhun_course_reqs WHERE code = '" + classTaken + "' AND rhun_reqs.ID = rhun_course_reqs.reqID AND reqID > 9 GROUP BY ID ORDER BY size asc");
 				boolean reqFound = false;
 				int reqFulfilled = 0; 
@@ -555,6 +555,7 @@ public List<Course> getCoursesThatMatchSortedLim(List<AttrVal> match, boolean so
 					// remove that req from the reqs_needed
 					for (int i = 0; i < allReqs.size(); i++) {
 						if (allReqs.get(i) == reqFulfilled) {
+							// System.out.println("Removing : " + allReqs.get(i) + "given " + classTaken);
 							allReqs.remove(i);
 							reqFound = true;
 							break;

@@ -68,20 +68,25 @@ public class MajorReqs {
 		// getting list of reqs still unfulfilled
 		Set<String> cTaken = new HashSet<String>();
 		List<String> testsTaken = new ArrayList<String>();
+		cTaken.add("EE 108A");
+		
+		cTaken.add("EE 101A");
+		
 		cTaken.add("CS 143");
-		cTaken.add("EE 108B");
+		cTaken.add("ME 210");		
+		cTaken.add("CS 144");
+		cTaken.add("CS 140");	
+		
 		cTaken.add("Math 51");
-		cTaken.add("Math 21");
 		cTaken.add("CS 161");
-		cTaken.add("Engr 40");
-		cTaken.add("Engr 50");
-		cTaken.add("CS 140"); 
-		cTaken.add("CS 106B");
-		cTaken.add("CS 147");
 		cTaken.add("CS 103");
+		
+		cTaken.add("Engr 40");
+		cTaken.add("ARTSTUD 60");
+		cTaken.add("CS 106B");
 		reqsNeeded = new ArrayList<String>();
 		dbc = new DBConnection();
-		generateMajorReqsLeft("Systems", cTaken, testsTaken);
+		generateMajorReqsLeft("Computer Engineering", cTaken, testsTaken);
 		
 		// getting list of courses that fulfill a given major req
 		List<String> listReqsFulfilled = getCoursesFulfillingMR("Math Elective");
