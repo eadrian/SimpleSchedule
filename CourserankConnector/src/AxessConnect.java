@@ -171,7 +171,7 @@ public class AxessConnect {
                 String line;
                 while ((line = br.readLine()) != null) {
                 	page +=line;
-                	System.out.println(line);
+                	//System.out.println(line);
                 }
                 br.close();
                 i.close();
@@ -204,7 +204,7 @@ public class AxessConnect {
                 String line;
                 while ((line = br.readLine()) != null) {
                 	page +=line;
-                	System.out.println(line);
+                	//System.out.println(line);
                 }
                 br.close();
                 i.close();

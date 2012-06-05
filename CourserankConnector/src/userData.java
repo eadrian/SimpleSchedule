@@ -1,4 +1,3 @@
-package web;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -7,12 +6,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.Iterator;
 
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
@@ -39,8 +38,9 @@ public class userData {
 	public Set<String> commonWords;
 	public AxessConnect a = null;
 	public List<String> coursesTaken = null;
-	public List<String> UGTESTs = null;
+	public List<String> titlesTaken = null;
 	public String courseString;
+	public List<String> UGTESTs = null;
 	
 	public int earliestYear = 3000;
 	public int latestYear = 0;
@@ -139,9 +139,9 @@ public class userData {
 		deptYearTotal = new HashMap<String, Integer>();
 		expectedCourses = new HashMap<String, Float>();
 		courseString = ",";
-		UGTESTs = new ArrayList<String>();
+		titlesTaken = new ArrayList<String>();
 		//this.major = major;
-		 
+		UGTESTs = new ArrayList<String>();
 		
 		commonWords = getCommonWords();
 		
@@ -167,6 +167,7 @@ public class userData {
 			String code = new String(c.substring(0,index).trim());
 			String dept = new String(code.substring(0, code.indexOf(" ")));
 
+			
 			
 			if (dept.equals("UGTEST")) {
 				UGTESTs.add(code);
@@ -222,6 +223,8 @@ public class userData {
 				if(rs.next()) {
 					tags = rs.getString("allTags");
 					GERS = rs.getString("GERS");
+					String ctitle = rs.getString("title").toUpperCase().trim();
+					titlesTaken.add(ctitle);
 					if (!GERS.equals(null)) {
 						String[] gersTaken = GERS.split(" ");
 						for (int j=0; j<gersTaken.length || j==0; j++) {
@@ -248,6 +251,7 @@ public class userData {
 				} else {
 					tags = deptTags.get(dept)+" "+getTags(tagger, title);
 					System.out.println("Did not find course, generated tags: "+tags);
+					titlesTaken.add(title.trim().toUpperCase());
 				}
 				
 			} catch (SQLException e) {
@@ -344,7 +348,8 @@ public class userData {
 			
 			while(rs.next()){
 				String name = rs.getString("name").trim();
-				GERS.add(name);
+				if (name.contains("EC") || name.contains("DB"))
+					GERS.add(name);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -421,6 +426,11 @@ public class userData {
 		this.rejectedCourses= this.rejectedCourses+code+",";
 	}
 	
+	public void removeGER(String GER) {
+		gers.remove(GER);
+		GERSNeeded.replace(" "+GER, "");
+	}
+	
 	public static void main(String[] args) throws Exception {
 		MaxentTagger t = null;
 		try {
@@ -435,21 +445,20 @@ public class userData {
 		}
 		
         userData u  = new userData("eaconte","mttresp1",t);
-        
-        
+		//userData u  = new userData("elchen3","Anim0rph!",t);
         u.rejectCourse("CS 181");
         keywordSearch k = new keywordSearch(u.tagger);
         ScheduleFiller sf = new ScheduleFiller();
         
         Schedule s = new Schedule();
-        s.addItem("CS244", "01010", 1250, 1405);
-        s.addItem("No Fridays", "00001", 0, 2400);
+        //s.addItem("CS244", "01010", 1250, 1405);
+        //s.addItem("No Fridays", "00001", 0, 2400);
         //s.addItem("ALLTIME", "11111", 0, 2400);
         searchFactors f = new searchFactors();
         //f.setFactor("RELEVANCE", 1);
         f.setFactor("INTEREST", 2);
         f.setFactor("LEVEL", 1);
-        f.setFactor("GERS", 1);
+        //f.setFactor("GERS", 1);
         f.setFactor("WORK", 1);
         f.setFactor("POPULARITY", 1);
         f.setFactor("INDEPENDENT", 1);
@@ -457,25 +466,50 @@ public class userData {
         f.setFactor("TOTAL", 1);
         List<String> barredCourses = new ArrayList<String>();
         barredCourses.add("CS 198");
-        MajorReqs mr = new MajorReqs("Systems", u);	// major requirements
-
-        TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses);
-
-		Iterator<String> iter = mr.reqsNeeded.iterator();
-		while (iter.hasNext()) {
-			System.out.println("Requirement left: " + iter.next());
-		}
-		
-        //sf.getBestCourse(u, tdata, f, "Spring", 2012);
+        barredCourses.add("ENGR 70A");
+        barredCourses.add("ENGR 70B");
+        barredCourses.add("CS 105");
+        //u.removeGER("ECGender");
+        Date start = new Date();
         
-
+        MajorReqs mr = new MajorReqs("Systems", u);  // major requirements
+        
+        //mr.removeCourse("ENGR 14");
+        //mr.printReqs();
+        /*if (true)
+        	return;*/
+        
+        Iterator<String> iter = mr.reqsNeeded.iterator();
+    	
+        while (iter.hasNext()) {
+    		
+        	System.out.println("Requirement left: " + iter.next());
+    	
+        }
+        
+        TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses, mr);
+        
+        //GET THE SCHEDULES
+        List<List<Course>> results = sf.getRandSchedules(u, tdata, f, "Spring", 2012, 10);
+        
+        Date finish = new Date();
+        System.err.println("Time to generate schedules: "+(float)((finish.getTime()-start.getTime())/1000f));
+        
+        //PRINT THE SCHEDULES
+        for (int i=0; i < results.size(); i++) {
+        	System.out.println("Schedule "+i+":");
+        	for (int j=0; j<results.get(i).size(); j++) {
+        		System.out.println(results.get(i).get(j).code+" : "+results.get(i).get(j).title);
+        	}
+         }
         if (true)
         	return;
-        Date start = new Date();
-        k.search(u,"politics", "ALL",f,s);
-        Date finish = new Date();
-		System.err.println("Time to search for courses: "+(float)((finish.getTime()-start.getTime())/1000f));
         
+        
+        
+        k.search(u,"politics", "ALL",f,s);
+        
+		System.err.println("Time to search for courses: "+(float)((finish.getTime()-start.getTime())/1000f));
     }
 	
 	public int roundDownHundred(int num) {

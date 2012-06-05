@@ -44,6 +44,8 @@ public class Course {
 	public String deptCode;
 	public int deptNum;
 	public float totalScore;
+	public boolean fillsGER = false;
+	public boolean fillsREQ = false;
 	
 	public float relevance;
 	

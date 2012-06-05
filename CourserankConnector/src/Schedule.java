@@ -28,11 +28,11 @@ public class Schedule {
 	public boolean checkFit(String name, String days, int start, int end) {
 		for (int i=0; i<items.size(); i++) {
 			if (items.get(i).conflicts(days, start, end)) {
-				System.err.println(name+" schedule conflict with: "+items.get(i).name);
+				//System.err.println(name+" schedule conflict with: "+items.get(i).name);
 				return false;
 			}
 		}
-		System.out.println("No Schedule Conflict");
+		//System.out.println("No Schedule Conflict");
 		return true;
 	}
 	

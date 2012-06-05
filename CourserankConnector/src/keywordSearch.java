@@ -76,21 +76,21 @@ public class keywordSearch {
 		Collections.sort(courses, CourseSorter.COMPARATOR);
 		
 		for (String key : sortedScores.keySet()) {
-			System.out.println(key+" : "+scoreMap.get(key));
+			//System.out.println(key+" : "+scoreMap.get(key));
 		}
 		return courses;
 		
 	}
 
 	private float scoreCourse(userData data, Course c,Schedule sched, searchFactors factors, String search) {
-		System.out.println("Trying to fit: "+c.code);
+		//System.out.println("Trying to fit: "+c.code);
 		if (sched.checkFit(c.code,c.lectureDays, c.timeBegin, c.timeEnd)) {
 			
 		} else {
 			
 			return 0;
 		}
-		System.out.println("Checking prereqs for "+c.code);
+		//System.out.println("Checking prereqs for "+c.code);
 		if (prereqFulfilled(c.prereqs, data.courseString))	{
 			
 		} else {
@@ -109,71 +109,71 @@ public class keywordSearch {
 		
 		//System.out.println("Relevance: "+c.relevance);
 		if (factors.factorWeight.get("RELEVANCE")>0) {
-			System.out.println("Determining Relevance");
+			//System.out.println("Determining Relevance");
 			float relevance = calculateRelevance(c, search);
 			totalScore+=relevance * factors.factorWeight.get("RELEVANCE");
 		}
 		
 		if (factors.factorWeight.get("PREREQS")>0) {
-			System.out.println("Determining PreScore");
+			//System.out.println("Determining PreScore");
 			float preScore = c.preScore;
-			System.out.println("PreScore for "+c.code+" : "+preScore);
+			//System.out.println("PreScore for "+c.code+" : "+preScore);
 			totalScore+=preScore * factors.factorWeight.get("PREREQS");
 		}
 		
 		
 		if (factors.factorWeight.get("INTEREST")>0) {
-			System.out.println("Determining Interest");
+			//System.out.println("Determining Interest");
 			float interest = calculateInterest(data,c);
-			System.out.println("Interest in "+c.code+" : "+interest);
+			//System.out.println("Interest in "+c.code+" : "+interest);
 			totalScore+=interest * factors.factorWeight.get("INTEREST");
 		}
 		
 		if (factors.factorWeight.get("LEVEL")>0) {
-			System.out.println("Determining Level Match");
+			//System.out.println("Determining Level Match");
 			float level = calculateLevel(data,c);
-			System.out.println("Level Match for "+c.code+" : "+level);
+			//System.out.println("Level Match for "+c.code+" : "+level);
 			totalScore+=level * factors.factorWeight.get("LEVEL");
 		}
 		
 		if (factors.factorWeight.get("GERS")>0) {
-			System.out.println("Determining GER Score");
+			//System.out.println("Determining GER Score");
 			float GERScore = calculateGERScore(data,c);
-			System.out.println("GER score for "+c.code+" : "+GERScore);
+			//System.out.println("GER score for "+c.code+" : "+GERScore);
 			totalScore+=GERScore * factors.factorWeight.get("GERS");
 		}
 		
 		if (factors.factorWeight.get("WORK")>0) {
-			System.out.println("Determining Work Score");
+			//System.out.println("Determining Work Score");
 			float wScore = c.wScore;
-			System.out.println("Level Work Score for "+c.code+" : "+wScore);
+			//System.out.println("Level Work Score for "+c.code+" : "+wScore);
 			totalScore+=wScore * factors.factorWeight.get("WORK");
 		}
 		
 		if (factors.factorWeight.get("POPULARITY")>0) {
-			System.out.println("Determining Popularity");
+			//System.out.println("Determining Popularity");
 			float nScore = c.nScore;
-			System.out.println("Popularity for "+c.code+" : "+nScore);
+			//System.out.println("Popularity for "+c.code+" : "+nScore);
 			totalScore+=nScore * factors.factorWeight.get("POPULARITY");
 		}
 		
 		if (factors.factorWeight.get("INDEPENDENT")>0) {
-			System.out.println("Determining Independent");
+			//System.out.println("Determining Independent");
 			float indep = c.title.toUpperCase().contains("INDEPENDENT") ? 0 : 100;
-			System.out.println("Independent for "+c.code+" : "+indep);
+			//System.out.println("Independent for "+c.code+" : "+indep);
 			totalScore+=indep * factors.factorWeight.get("INDEPENDENT");
 		}
 		
 		if (factors.factorWeight.get("PROJECT")>0) {
-			System.out.println("Determining Project");
+			//System.out.println("Determining Project");
 			float proj = c.title.toUpperCase().contains("PROJECT") ? 0 : 100;
-			System.out.println("Project for "+c.code+" : "+proj);
+			//System.out.println("Project for "+c.code+" : "+proj);
 			totalScore+=proj * factors.factorWeight.get("PROJECT");
 		}
 		if (factors.factorWeight.get("TOTAL")>0) {
-			System.out.println("Determining Total");
-			float tscore = c.tScore;
-			System.out.println("TScore for "+c.code+" : "+tscore);
+			//System.out.println("Determining Total");
+			float tscore = (float) (.25*c.tScore);
+			//System.out.println("TScore for "+c.code+" : "+tscore);
 			totalScore+=tscore * factors.factorWeight.get("TOTAL");
 		}
 		
@@ -215,7 +215,7 @@ public class keywordSearch {
 		if (data.deptNums.containsKey(c.deptCode)) {
 			deptAvg = data.deptNums.get(c.deptCode);
 		}
-		System.out.println(c.code+" num : "+num);
+		//System.out.println(c.code+" num : "+num);
 		if (deptAvg == num || deptAvg +1 == num) {
 			return DEFAULT_MAX_SCORE;
 		} else if (num < deptAvg)
@@ -240,22 +240,24 @@ public class keywordSearch {
 			i++;
 			interestedWords.add(key);
 			total+=data.keywords.get(key);
+			System.out.println(key);
 		}
 		int words = interestedWords.size();
 		for (int j=0; j<words; j++) {
 			String word = interestedWords.get(j);
 			
 			int appearances = getAppearances(c, word);
-			System.out.println("Keyword: "+word+" apps: "+data.keywords.get(word)+" total: "+total+" value: "+((float)data.keywords.get(word))/(total));
+			//System.out.println("Keyword: "+word+" apps: "+data.keywords.get(word)+" total: "+total+" value: "+((float)data.keywords.get(word))/(total));
 			if (appearances>1) {
 				//Frequent or more than one appearance in tags.
-				System.out.println("High interest match for: "+word);
+				//System.out.println("High interest match for: "+word);
 				interest+=maxInterest*((float)data.keywords.get(word))/(total);
 			} else if (appearances == 1){
 				//Rare, probably not a great match on this tag.
 				interest+=maxInterest*((float)data.keywords.get(word))/(1.5*total);
 			}
 		}
+		System.out.println("Interest Score: "+interest+" : "+c.code);
 		return interest;
 	}
 
@@ -284,7 +286,7 @@ public class keywordSearch {
 					relevance+=maxRelevance/(1.5*tokens);
 				}
 			}
-			System.out.println("Total relevance: "+relevance);
+			//System.out.println("Total relevance: "+relevance);
 			return relevance;
 		} else
 			return REL_MAX;
@@ -312,15 +314,15 @@ public class keywordSearch {
 	private int getAppearances(Course c, String token) {
 		int appearances = 0;
 		if (c.tags.contains(" "+token+" ")) {
-			System.out.println(token+" appears in "+c.code+" : tags");
+			//System.out.println(token+" appears in "+c.code+" : tags");
 			appearances++;
 		}
 		if (c.titleTags.contains(" "+token+" ")) {
-			System.out.println(token+" appears in "+c.code+" : title tags");
+			//System.out.println(token+" appears in "+c.code+" : title tags");
 			appearances++;
 		}
 		if (c.deptTags.contains(" "+token+" ")) {
-			System.out.println(token+" appears in "+c.code+" : dept tags");
+			//System.out.println(token+" appears in "+c.code+" : dept tags");
 			appearances++;
 		}
 		return appearances;
@@ -452,7 +454,7 @@ public class keywordSearch {
 	    	a.like = true;
 	    	a.type = "String";
 	    	a.attr = "allTags";
-	    	System.out.println("Searchword: "+word);
+	    	//System.out.println("Searchword: "+word);
 	    	a.val = "% "+word+" %";
 	    	match.add(a);
 	    }
@@ -531,7 +533,7 @@ public class keywordSearch {
     	if (results==null)
     		return null;
     	for (int i=0; i<results.size(); i++) {
-    		System.out.println(""+i+": "+results.get(i).code);
+    		//System.out.println(""+i+": "+results.get(i).code);
     	}
     	return results;
 	}

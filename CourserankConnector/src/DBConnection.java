@@ -1,23 +1,16 @@
-package web;
 
 
 import java.sql.*;
 import java.util.*;
 
 public class DBConnection {
-/*
-	// eac's db access
+
+
 	private static final String account = "root";
 	private static final String password = "trespass";
 	private static final String server = "localhost";
 	public static final String database = "cdata";
-*/
-	// ekc's db access
-	private static final String account = "root";
-	private static final String password = "";
-	private static final String server = "localhost";
-	public static final String database = "rhun";
-	
+
 	public Connection con;
 	public static final String sep = "\", \"";
 	
@@ -486,143 +479,67 @@ public List<Course> getCoursesThatMatchSortedLim(List<AttrVal> match, boolean so
 		
 	}
 
-	private List<String> parsePrereqs(String reqs) {
-		List<String> prereqs = new ArrayList<String>();
-		String[] reqArray = reqs.split(",");
-		for (int i=0; i<reqArray.length || i==0; i++) {
-			if (!reqArray[i].equals(""))
-				prereqs.add(reqArray[i]);
-		}
-		return prereqs;
+private List<String> parsePrereqs(String reqs) {
+	List<String> prereqs = new ArrayList<String>();
+	String[] reqArray = reqs.split(",");
+	for (int i=0; i<reqArray.length || i==0; i++) {
+		if (!reqArray[i].equals(""))
+			prereqs.add(reqArray[i]);
 	}
+	return prereqs;
+}
 
-	public List<Integer> getAllReqGroups(String track) {
-		List<Integer> allReqGroups = new ArrayList<Integer>();
+public List<Integer> getAllReqGroups(String track) {
+	List<Integer> allReqGroups = new ArrayList<Integer>();
+	try {
+		Statement stmt = con.createStatement();
+		stmt.executeQuery("USE " + database);
+		ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_tracks, rhun_track_reqgroup WHERE rhun_tracks.name = '" + track + "' AND rhun_tracks.id = rhun_track_reqgroup.trackID");
+		while(rs.next()){
+			String reqGroupIDStr = rs.getString("reqGroupID");
+			allReqGroups.add(Integer.parseInt(reqGroupIDStr));
+		}				
+	} catch (SQLException e) {
+		e.printStackTrace();
+		System.out.println("Was not able to get list of requirement groups.");			
+	}
+	return allReqGroups;
+	
+}
+
+public List<Integer> getAllReqs(List<Integer> allReqGroups) {
+	List<Integer> allReqs = new ArrayList<Integer>();
+	Iterator<Integer> iterator = allReqGroups.iterator();
+	while (iterator.hasNext()) {			// iterate thru each requirement group
+		int reqGroupID = iterator.next();
 		try {
 			Statement stmt = con.createStatement();
 			stmt.executeQuery("USE " + database);
-			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_tracks, rhun_track_reqgroup WHERE rhun_tracks.name = '" + track + "' AND rhun_tracks.id = rhun_track_reqgroup.trackID");
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqgroup_req WHERE reqGroupID = " + reqGroupID);
 			while(rs.next()){
-				String reqGroupIDStr = rs.getString("reqGroupID");
-				allReqGroups.add(Integer.parseInt(reqGroupIDStr));
+				int times = Integer.parseInt(rs.getString("numRequired"));
+				int reqID = Integer.parseInt(rs.getString("reqID"));
+				for (int i = 0; i < times; i++) {
+					allReqs.add(reqID);
+				}
 			}				
 		} catch (SQLException e) {
 			e.printStackTrace();
-			System.out.println("Was not able to get list of requirement groups.");			
+			System.out.println("Was not able to get list of requirements.");			
 		}
-		return allReqGroups;
-		
 	}
-
-	public List<Integer> getAllReqs(List<Integer> allReqGroups) {
-		List<Integer> allReqs = new ArrayList<Integer>();
-		Iterator<Integer> iterator = allReqGroups.iterator();
-		while (iterator.hasNext()) {			// iterate thru each requirement group
-			int reqGroupID = iterator.next();
-			try {
-				Statement stmt = con.createStatement();
-				stmt.executeQuery("USE " + database);
-				ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqgroup_req WHERE reqGroupID = " + reqGroupID);
-				while(rs.next()){
-					int times = Integer.parseInt(rs.getString("numRequired"));
-					int reqID = Integer.parseInt(rs.getString("reqID"));
-					for (int i = 0; i < times; i++) {
-						allReqs.add(reqID);
-					}
-				}				
-			} catch (SQLException e) {
-				e.printStackTrace();
-				System.out.println("Was not able to get list of requirements.");			
-			}
-		}
-		return allReqs;
-		
-	}
-
-	public void checkOffReqs(List<Integer> allReqs, Set<String> cTaken) {
-		Iterator<String> iterator = cTaken.iterator();
-		while (iterator.hasNext()) {			// iterate thru each class taken
-			String classTaken = iterator.next();
-			System.out.println("testing " + classTaken);
-			try {
-				Statement stmt = con.createStatement();
-				stmt.executeQuery("USE " + database);
-				ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs,rhun_course_reqs WHERE code = '" + classTaken + "' AND rhun_reqs.ID = rhun_course_reqs.reqID AND reqID > 9 GROUP BY ID ORDER BY size asc");
-				boolean reqFound = false;
-				int reqFulfilled = 0; 
-				while(rs.next() && !reqFound){
-					reqFulfilled = Integer.parseInt(rs.getString("ID"));
-					// remove that req from the reqs_needed
-					for (int i = 0; i < allReqs.size(); i++) {
-						if (allReqs.get(i) == reqFulfilled) {
-							// System.out.println("Removing : " + allReqs.get(i) + "given " + classTaken);
-							allReqs.remove(i);
-							reqFound = true;
-							break;
-						}
-					}
-				}		
-
-			} catch (SQLException e) {
-				e.printStackTrace();
-				System.out.println("Was not able to modify list of requirements.");			
-			}
-		}
-		
-	}
+	return allReqs;
 	
-	
-	public void checkOffReqs_UGTests(List<Integer> allReqs, List<String> testsTaken) {
-		List<Integer> listReqsFulfilled = new ArrayList<Integer>();
-		Iterator<String> iterator = testsTaken.iterator();
-		while (iterator.hasNext()) {			// iterate thru each test taken
-			String testTaken = iterator.next();
-			try {
-				Statement stmt = con.createStatement();
-				stmt.executeQuery("USE " + database);
-				
-				if (testTaken.equals("UGTEST CH")) {
-					ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs WHERE name = 'Science Elective'");
-					while(rs.next()) {
-						listReqsFulfilled.add(Integer.parseInt(rs.getString("ID")));
-					}		
-				} else if (testTaken.equals("UGTEST MA")) {
-					ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs WHERE name = 'Calculus 1' OR name = 'Calculus 2'");
-					while(rs.next()){
-						listReqsFulfilled.add(Integer.parseInt(rs.getString("ID")));
-					}		
-				} else if (testTaken.equals("UGTEST PH")) {
-					ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs WHERE name = 'Physics Mechanics' OR name = 'Physics Electricity and Magnetism'");
-					while(rs.next()){
-						listReqsFulfilled.add(Integer.parseInt(rs.getString("ID")));
-					}		
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-				System.out.println("Was not able to process ap/ib tests to modify list of requirements.");			
-			}
-		}
+}
 
-		// remove that req from the reqs_needed
-		Iterator<Integer> iteratorInt = listReqsFulfilled.iterator();
-		while (iteratorInt.hasNext()) {
-			int reqFulfilled = iteratorInt.next();
-			for (int i = 0; i < allReqs.size(); i++) {
-				if (allReqs.get(i) == reqFulfilled) {
-					allReqs.remove(i);
-					break;
-				}
-			}
-		}
-	}
-
-
-	public String getRarestReq(List<Integer> allReqs, String classTaken) {
-		String rarestReq = "";
+public void checkOffReqs(List<Integer> allReqs, Set<String> cTaken) {
+	Iterator<String> iterator = cTaken.iterator();
+	while (iterator.hasNext()) {			// iterate thru each class taken
+		String classTaken = iterator.next();
+		System.out.println("testing " + classTaken);
 		try {
 			Statement stmt = con.createStatement();
 			stmt.executeQuery("USE " + database);
-			
 			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs,rhun_course_reqs WHERE code = '" + classTaken + "' AND rhun_reqs.ID = rhun_course_reqs.reqID AND reqID > 9 GROUP BY ID ORDER BY size asc");
 			boolean reqFound = false;
 			int reqFulfilled = 0; 
@@ -631,33 +548,115 @@ public List<Course> getCoursesThatMatchSortedLim(List<AttrVal> match, boolean so
 				// remove that req from the reqs_needed
 				for (int i = 0; i < allReqs.size(); i++) {
 					if (allReqs.get(i) == reqFulfilled) {
-						rarestReq = getAttribute("rhun_reqs", allReqs.get(i), "name");
+						// System.out.println("Removing : " + allReqs.get(i) + "given " + classTaken);
+						allReqs.remove(i);
 						reqFound = true;
 						break;
 					}
 				}
 			}		
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 			System.out.println("Was not able to modify list of requirements.");			
 		}
-		return rarestReq;
 	}
 	
-	public List<String> getCoursesThatFulfillMR(String reqName) {
-		List<String> coursesFulfilling = new ArrayList<String>();
+}
+
+
+public void checkOffReqs_UGTests(List<Integer> allReqs, List<String> testsTaken) {
+	List<Integer> listReqsFulfilled = new ArrayList<Integer>();
+	Iterator<String> iterator = testsTaken.iterator();
+	while (iterator.hasNext()) {			// iterate thru each test taken
+		String testTaken = iterator.next();
 		try {
 			Statement stmt = con.createStatement();
 			stmt.executeQuery("USE " + database);
-			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_course_reqs, rhun_reqs WHERE rhun_reqs.ID = rhun_course_reqs.reqID AND name = '" + reqName + "'");
-			while(rs.next()) {
-				coursesFulfilling.add(rs.getString("code"));
-			}	
+			
+			if (testTaken.equals("UGTEST CH")) {
+				ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs WHERE name = 'Science Elective'");
+				while(rs.next()) {
+					listReqsFulfilled.add(Integer.parseInt(rs.getString("ID")));
+				}		
+			} else if (testTaken.equals("UGTEST MA")) {
+				ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs WHERE name = 'Calculus 1' OR name = 'Calculus 2'");
+				while(rs.next()){
+					listReqsFulfilled.add(Integer.parseInt(rs.getString("ID")));
+				}		
+			} else if (testTaken.equals("UGTEST PH")) {
+				ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs WHERE name = 'Physics Mechanics' OR name = 'Physics Electricity and Magnetism'");
+				while(rs.next()){
+					listReqsFulfilled.add(Integer.parseInt(rs.getString("ID")));
+				}		
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
-			System.out.println("Was not able to get courses fulfilling major requirements.");			
+			System.out.println("Was not able to process ap/ib tests to modify list of requirements.");			
 		}
-		return coursesFulfilling;
+	}
+
+	// remove that req from the reqs_needed
+	Iterator<Integer> iteratorInt = listReqsFulfilled.iterator();
+	while (iteratorInt.hasNext()) {
+		int reqFulfilled = iteratorInt.next();
+		for (int i = 0; i < allReqs.size(); i++) {
+			if (allReqs.get(i) == reqFulfilled) {
+				allReqs.remove(i);
+				break;
+			}
+		}
 	}
 }
+
+
+public String getRarestReq(List<Integer> allReqs, String classTaken) {
+	String rarestReq = "";
+	try {
+		Statement stmt = con.createStatement();
+		stmt.executeQuery("USE " + database);
+		
+		ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_reqs,rhun_course_reqs WHERE code = '" + classTaken + "' AND rhun_reqs.ID = rhun_course_reqs.reqID AND reqID > 9 GROUP BY ID ORDER BY size asc");
+		boolean reqFound = false;
+		int reqFulfilled = 0; 
+		while(rs.next() && !reqFound){
+			reqFulfilled = Integer.parseInt(rs.getString("ID"));
+			// remove that req from the reqs_needed
+			for (int i = 0; i < allReqs.size(); i++) {
+				if (allReqs.get(i) == reqFulfilled) {
+					rarestReq = getAttribute("rhun_reqs", allReqs.get(i), "name");
+					reqFound = true;
+					break;
+				}
+			}
+		}		
+	} catch (SQLException e) {
+		e.printStackTrace();
+		System.out.println("Was not able to modify list of requirements.");			
+	}
+	return rarestReq;
+}
+
+public List<String> getCoursesThatFulfillMR(String reqName) {
+	List<String> coursesFulfilling = new ArrayList<String>();
+	try {
+		Statement stmt = con.createStatement();
+		stmt.executeQuery("USE " + database);
+		ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_course_reqs, rhun_reqs WHERE rhun_reqs.ID = rhun_course_reqs.reqID AND name = '" + reqName + "'");
+		while(rs.next()) {
+			String code = rs.getString("code");
+			if (!coursesFulfilling.contains(code))
+				coursesFulfilling.add(code);
+		}	
+	} catch (SQLException e) {
+		e.printStackTrace();
+		System.out.println("Was not able to get courses fulfilling major requirements.");			
+	}
+	return coursesFulfilling;
+}
+}
+
+	
+	
+
 
