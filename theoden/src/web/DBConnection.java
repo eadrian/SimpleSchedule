@@ -8,9 +8,9 @@ public class DBConnection {
 
 
 	private static final String account = "root";
-	private static final String password = "";
+	private static final String password = "trespass";
 	private static final String server = "localhost";
-	public static final String database = "rhun";
+	public static final String database = "cdata";
 
 	public Connection con;
 	public static final String sep = "\", \"";
@@ -363,7 +363,7 @@ public class DBConnection {
 	    if (sort) {
 	    	query= query + " ORDER BY "+attr;
 	    }
-		query = query + " LIMIT 100";
+		//query = query + " LIMIT 100";
 		System.err.println("Executing query: "+query);
 	    
 	    try {
@@ -430,7 +430,7 @@ public List<Course> getCoursesThatMatchSortedLim(List<AttrVal> match, boolean so
 	    if (sort) {
 	    	query= query + " ORDER BY "+attr+ " DESC";
 	    }
-		query = query + " LIMIT 100";
+		//query = query + " LIMIT 100";
 		System.err.println("Executing query: "+query);
 	    int counter = 0;
 	    try {

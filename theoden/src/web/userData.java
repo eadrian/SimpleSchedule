@@ -291,9 +291,9 @@ public class userData {
 			System.out.println(e.getKey()+" : "+e.getValue());
 			expectedCourses.put(e.getKey(), ((float)e.getValue()/((latestYear-earliestYear+1)*3)));
 			System.out.println("Expected Courses for "+e.getKey()+" : "+expectedCourses.get(e.getKey()));
-			System.out.println("Average course number for dept: "+((float)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey())));
-			System.out.println("Avg Rounded: "+roundDownHundred(((int)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey()))));
-			deptNums.put(e.getKey(), roundDownHundred(((int)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey()))));
+			//System.out.println("Average course number for dept: "+((float)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey())));
+			//System.out.println("Avg Rounded: "+roundDownHundred(((int)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey()))));
+			deptNums.put(e.getKey(), (int) ((float)deptNums.get(e.getKey())/deptYearTotal.get(e.getKey())));
 		}
 		Object[] deptArray = sortedDepts.keySet().toArray();
 		major = (String) deptArray[0];

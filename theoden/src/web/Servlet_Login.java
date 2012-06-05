@@ -66,7 +66,7 @@ public class Servlet_Login extends HttpServlet {
 			String username = request.getParameter("username");
 			String password = request.getParameter("password");
 			
-			String address = "C:\\\\Users\\\\Elaine\\Desktop\\galadriel\\CourserankConnector\\";
+			String address = "C:\\Users\\Elliot\\SimpleSchedule\\CourserankConnector\\";
 			String tagger_address = address + "models/english-left3words-distsim.tagger";
 			MaxentTagger t = null;
 			userData u = null;
@@ -137,8 +137,8 @@ public class Servlet_Login extends HttpServlet {
 	        TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses, mr);
 	        
 	        //GET THE SCHEDULES
-	        List<List<Course>> results = sf.getRandSchedules(u, tdata, f, "Spring", 2012, 10);
-	        
+	        //List<List<Course>> results = sf.getRandSchedules(u, tdata, f, "Spring", 2012, 10);
+	        /*
 	        Date finish = new Date();
 	        System.err.println("Time to generate schedules: "+(float)((finish.getTime()-start.getTime())/1000f));
 	        
@@ -158,7 +158,7 @@ public class Servlet_Login extends HttpServlet {
 	        k.search(u,"politics", "ALL",f,s);
 	        
 			System.err.println("Time to search for courses: "+(float)((finish.getTime()-start.getTime())/1000f));
-			
+			*/
 			
 	        response.getWriter().write("success!!!");
 		}

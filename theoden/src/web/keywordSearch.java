@@ -185,6 +185,74 @@ public class keywordSearch {
 		} else {
 			totalScore+=DEFAULT_MAX_SCORE;
 		}
+		
+		
+		
+		if (c.deptCode.equals("ATHLETIC")) {
+			//Fix Sports
+			String nTitle = c.title.toUpperCase().trim();
+			
+			if (nTitle.contains("WOMEN"))
+				totalScore=0;
+			else if (nTitle.contains("MEN"))
+				totalScore=0;
+			
+			if (nTitle.contains("ADVANCED")) {
+				String preTitle = nTitle.replace("ADVANCED", "INTERMEDIATE");
+				if (!data.titlesTaken.contains(preTitle)) {
+					c.totalScore = 0;
+					//System.out.println("Did not contain ATH prereq");
+				} else {
+					totalScore+=DEFAULT_MAX_SCORE;
+				}
+			} else if (nTitle.contains("INTERMEDIATE")) {
+				String preTitle = nTitle.replace("INTERMEDIATE", "BEGINNER");
+				String altTitle = nTitle.replace("INTERMEDIATE", "BEGINNING");
+				if (!data.titlesTaken.contains(preTitle) && !data.titlesTaken.contains(altTitle)) {
+					totalScore = 0;
+					//System.out.println("Did not contain ATH prereq");
+				} else {
+					totalScore+=DEFAULT_MAX_SCORE;
+				}
+			} else if (nTitle.contains("BEGINNER") || nTitle.contains("BEGINNING"))
+				totalScore+=DEFAULT_MAX_SCORE/2;
+		}
+		if (c.deptCode.contains("LANG")) {
+			//Check for language level
+			
+			
+			String nTitle = c.title.toUpperCase().trim();
+			
+			if (nTitle.contains("SECOND-YEAR")) {
+				String preTitle = nTitle.replace("SECOND", "FIRST");
+				if (!data.titlesTaken.contains(preTitle)) {
+					totalScore = 0;
+					//System.out.println("Did not contain LANG prereq");
+				} else {
+					totalScore+=DEFAULT_MAX_SCORE;
+				}
+			} else if (nTitle.contains("THIRD-YEAR")) {
+				String preTitle = nTitle.replace("THIRD", "SECOND");
+				if (!data.titlesTaken.contains(preTitle)) {
+					totalScore = 0;
+					//System.out.println("Did not contain LANG prereq");
+				} else {
+					totalScore+=DEFAULT_MAX_SCORE;
+				}
+			} else if (nTitle.contains("BEGINNER") || nTitle.contains("BEGINNING"))
+				totalScore+=DEFAULT_MAX_SCORE/2;
+		}
+		
+		//Check for impossible time
+		if (c.timeBegin == c.timeEnd)
+			totalScore = 0;
+		
+		if (c.description.toUpperCase().contains("COREQUISITE")) {
+			totalScore = 0;    //IMPROVE THIS, CHECK IF THEY ARE TAKING THE COREQUISITE
+		}
+		
+		
+		
 		return totalScore;
 	}
 
@@ -211,18 +279,18 @@ public class keywordSearch {
 	}
 
 	private float calculateLevel(userData data, Course c) {
-		int num = data.roundDownHundred(c.deptNum);
-		int deptAvg = -1;
+		int num = c.deptNum;
+		int deptAvg = 40;
 		if (data.deptNums.containsKey(c.deptCode)) {
 			deptAvg = data.deptNums.get(c.deptCode);
 		}
 		//System.out.println(c.code+" num : "+num);
-		if (deptAvg == num || deptAvg +1 == num) {
+		if (deptAvg+60>num && deptAvg-40<num) {
 			return DEFAULT_MAX_SCORE;
 		} else if (num < deptAvg)
-			return DEFAULT_MAX_SCORE*3 / 4;
-		else if (!data.deptNums.containsKey(c.deptCode) && num > 1)
-			return DEFAULT_MAX_SCORE / 3;
+			return DEFAULT_MAX_SCORE*1 / 3;
+		else if (num > deptAvg+110)
+			return 0;
 		else
 			return DEFAULT_MAX_SCORE / 2;
 	}
@@ -248,15 +316,18 @@ public class keywordSearch {
 			String word = interestedWords.get(j);
 			
 			int appearances = getAppearances(c, word);
+			float apps = ((float)appearances) / 10f;
 			//System.out.println("Keyword: "+word+" apps: "+data.keywords.get(word)+" total: "+total+" value: "+((float)data.keywords.get(word))/(total));
-			if (appearances>1) {
+			/*if (appearances>1) {
 				//Frequent or more than one appearance in tags.
 				//System.out.println("High interest match for: "+word);
 				interest+=maxInterest*((float)data.keywords.get(word))/(total);
 			} else if (appearances == 1){
 				//Rare, probably not a great match on this tag.
 				interest+=maxInterest*((float)data.keywords.get(word))/(1.5*total);
-			}
+			}*/
+			
+			interest+=apps*maxInterest*((float)data.keywords.get(word))/(total);
 		}
 		System.out.println("Interest Score: "+interest+" : "+c.code);
 		return interest;
@@ -278,14 +349,15 @@ public class keywordSearch {
 				
 				String token = searchTokens.get(i);
 				int appearances = getAppearances(c, token);
-				
-				if (appearances>1) {
+				float apps = ((float)appearances  / 10f);
+				/*if (appearances>1) {
 					//Frequent or more than one appearance in tags.  
 					relevance+=maxRelevance/tokens;
 				} else {
 					//Rare, probably not a great match on this tag.
 					relevance+=maxRelevance/(1.5*tokens);
-				}
+				}*/
+				relevance+=apps*maxRelevance / tokens;
 			}
 			//System.out.println("Total relevance: "+relevance);
 			return relevance;
@@ -314,19 +386,33 @@ public class keywordSearch {
 
 	private int getAppearances(Course c, String token) {
 		int appearances = 0;
-		if (c.tags.contains(" "+token+" ")) {
-			//System.out.println(token+" appears in "+c.code+" : tags");
-			appearances++;
-		}
+		int apps = getApps(c.tags," "+token+" " );
+		apps = apps > 5 ? 5 : apps;
+		appearances += apps;
 		if (c.titleTags.contains(" "+token+" ")) {
 			//System.out.println(token+" appears in "+c.code+" : title tags");
-			appearances++;
+			appearances+=8;
 		}
 		if (c.deptTags.contains(" "+token+" ")) {
 			//System.out.println(token+" appears in "+c.code+" : dept tags");
-			appearances++;
+			appearances+=5;
 		}
 		return appearances;
+	}
+	
+	private int getApps(String str, String sub) {
+		int lastIndex = 0;
+		int count =0;
+
+		while(lastIndex != -1){
+
+		       lastIndex = str.indexOf(sub,lastIndex+1);
+
+		       if( lastIndex != -1){
+		             count ++;
+		      }
+		}
+		return count;
 	}
 
 	private boolean prereqFulfilled(List<String> prereqs, String courseString) {

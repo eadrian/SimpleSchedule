@@ -84,17 +84,17 @@ public class Servlet_Search extends HttpServlet {
         keywordSearch k = new keywordSearch(u.tagger);        
         Schedule s = new Schedule();
         // get factors
-        s.addItem("CS244", "01010", 1250, 1405);
-        s.addItem("No Fridays", "00001", 0, 2400);
+        //s.addItem("CS244", "01010", 1250, 1405);
+        //s.addItem("No Fridays", "00001", 0, 2400);
         //s.addItem("ALLTIME", "11111", 0, 2400);
         searchFactors f = new searchFactors();
-        f.setFactor("RELEVANCE", relevance);
-        f.setFactor("INTEREST", interest);
-        f.setFactor("LEVEL", level);
-        f.setFactor("WORK", work);
-        f.setFactor("POPULARITY", popularity);
-        f.setFactor("GERS", gers);
-        f.setFactor("TOTAL", 1);
+        f.setFactor("RELEVANCE", .5f+((float)3*relevance/6));
+        f.setFactor("INTEREST", .5f+((float)4*interest/6));
+        f.setFactor("LEVEL", .5f+((float)3*level/6));
+        f.setFactor("WORK", .5f+((float)3*work/6));
+        f.setFactor("POPULARITY", .5f+((float)3*popularity/6));
+        f.setFactor("GERS", .5f+((float)3*gers/6));
+        f.setFactor("TOTAL", (float) 1.5);
         f.setFactor("PROJECT", 1);
         f.setFactor("INDEPENDENT", 1);
         // get the map of scores and courses
@@ -111,11 +111,14 @@ public class Servlet_Search extends HttpServlet {
 		List<String> searchResults = new ArrayList<String>();
 		String returnedHTML = "";
 		for (Course c : sortedScores) {
+			if (searchResults.contains(c.code))
+				continue;
 			returnedHTML += "<li class='course' onclick='blah()'><strong>" + c.code + ": " + c.title + "</strong>";
-			returnedHTML += "<i>" + c.lectureDays + "</i>";
+			//returnedHTML += "<i>" + c.lectureDays + "</i>";
 			returnedHTML += "<span style='display: none'>" + c.description + "</span>";
 			returnedHTML += "</li>";
 			System.out.println(c.code + c.description);
+			searchResults.add(c.code);
 		}
 		request.setAttribute("searchResults", searchResults);
 		request.setAttribute("sortedScores", sortedScores);
