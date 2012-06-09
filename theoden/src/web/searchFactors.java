@@ -4,7 +4,7 @@ import java.util.Map;
 
 
 public class searchFactors {
-	public static String[] factors = {"WORK","GERS","SCHEDULE","QUALITY","POPULARITY","NEED","INTEREST", "RELEVANCE", "LEVEL", "INDEPENDENT", "PROJECT", "TOTAL", "PREREQS"};
+	public static String[] factors = {"WORK","GERS","SCHEDULE","QUALITY","POPULARITY","NEED","INTEREST", "RELEVANCE", "LEVEL", "INDEPENDENT", "PROJECT", "TOTAL", "PREREQS", "MAJOR"};
 	public Map<String, Float> factorWeight;
 	
 	

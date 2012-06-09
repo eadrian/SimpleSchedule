@@ -399,7 +399,7 @@ public class ScheduleFiller {
 		
 		keywordSearch k = new keywordSearch(null);
 
-		allResults = k.sortResults(udata,tdata, allResults, tdata.s, facts, "");
+		allResults = k.sortResults(udata,tdata,tdata.reqs, allResults, tdata.s, facts, "");
 		
 		allResults = processResults(allResults, udata, tdata, quartersLeft, expecGERS, expecMajor);
 		for (int i=0; i<allResults.size() && i<25; i++) {
@@ -465,14 +465,20 @@ public class ScheduleFiller {
 			}
 			
 			//Check if it fulfills unfulfilled major reqs
-			String req = tdata.reqs.getReq(c.code);
-			if (!req.equals("")) {
-				//Fulfills a new req
-				c.fillsREQ = true;
-				if (tdata.reqs.reqsFulfilling.get(req).size() <= RARE_REQ) {
-					c.totalScore+=urgency*(MAX_SCORE*expecMajor*2);
-				} else {
-					c.totalScore+=urgency*(MAX_SCORE*expecMajor);
+			if (udata.major.equals("CS")) {
+				String req = tdata.reqs.getReq(c.code);
+				if (!req.equals("")) {
+					//Fulfills a new req
+					c.fillsREQ = true;
+					if (tdata.reqs.reqsFulfilling.get(req).size() <= RARE_REQ) {
+						c.totalScore+=urgency*(MAX_SCORE*expecMajor*2);
+					} else {
+						c.totalScore+=urgency*(MAX_SCORE*expecMajor);
+					}
+				}
+			} else {
+				if (c.deptCode.equals(udata.major)) {
+					c.totalScore+=c.preScore*expecMajor;
 				}
 			}
 			

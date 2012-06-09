@@ -124,7 +124,7 @@ public class Servlet_Search extends HttpServlet {
         TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses, mr);
         
         
-		List<Course> sortedScores = k.search(u,tdata,query, "ALL",f,s);
+		List<Course> sortedScores = k.search(u,tdata,tdata.reqs,query, "ALL",f,s);
 /*
 		for (Course c : sortedScores) {
 			System.out.println("LALA: " + c.code + " : " + c.description);

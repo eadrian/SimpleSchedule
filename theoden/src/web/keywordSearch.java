@@ -21,6 +21,7 @@ import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
 public class keywordSearch {
 	
+	private static final int RARE_REQ = 4;
 	private static DBConnection dbc;
 	public static Object dbLock;
 	private MaxentTagger tagger;
@@ -41,18 +42,18 @@ public class keywordSearch {
 		
 	}
 	
-	public List<Course> search(userData u,TransientData tdata, String search, String quarter, searchFactors factors, Schedule sched) {
+	public List<Course> search(userData u,TransientData tdata,MajorReqs mr, String search, String quarter, searchFactors factors, Schedule sched) {
 		List<Course> results = searchForCourses(search, quarter);
 		for (int i=0; i<results.size(); i++) {
 			System.out.println(results.get(i).code);
 		}
 		
-		results = sortResults(u,tdata,results, sched, factors, search);
+		results = sortResults(u,tdata,mr,results, sched, factors, search);
 		return results;
 		
 	}
 	
-	public List<Course> sortResults(userData data, TransientData tdata, List<Course> results, Schedule sched, searchFactors factors, String search) {
+	public List<Course> sortResults(userData data, TransientData tdata, MajorReqs mr, List<Course> results, Schedule sched, searchFactors factors, String search) {
 		Map<String, Course> courseMap = new HashMap<String, Course>();
 		Map<String, Float> scoreMap = new HashMap<String, Float>();
 		FloatComparator fvc =  new FloatComparator(scoreMap);
@@ -62,7 +63,7 @@ public class keywordSearch {
 		for (int i=0; i<results.size(); i++) {
 			Course c = results.get(i);
 			
-			float score = scoreCourse(data,tdata,c, sched, factors, search);
+			float score = scoreCourse(data,tdata,mr,c, sched, factors, search);
 			c.totalScore = score;
 			courses.add(c);
 			courseMap.put(c.code, c);
@@ -83,7 +84,7 @@ public class keywordSearch {
 		
 	}
 
-	private float scoreCourse(userData data, TransientData tdata, Course c,Schedule sched, searchFactors factors, String search) {
+	private float scoreCourse(userData data, TransientData tdata, MajorReqs mr,Course c,Schedule sched, searchFactors factors, String search) {
 		//System.out.println("Trying to fit: "+c.code);
 		if (tdata.s.checkFit(c.code,c.lectureDays, c.timeBegin, c.timeEnd)) {
 			
@@ -106,6 +107,8 @@ public class keywordSearch {
 		if (data.rejectedCourses.contains(","+c.code+",")) {
 			return 0;
 		}
+		if (tdata.barredCourses.contains(c.code))
+			return 0;
 		
 		float totalScore = 0;
 		
@@ -179,7 +182,23 @@ public class keywordSearch {
 			//System.out.println("TScore for "+c.code+" : "+tscore);
 			totalScore+=tscore * factors.factorWeight.get("TOTAL");
 		}
-		
+		if (data.major.equals("CS")) {
+			if (factors.factorWeight.get("MAJOR") > 0) {
+				String req = tdata.reqs.getReq(c.code);
+				if (!req.equals("")) {
+					//Fulfills a new req
+					c.fillsREQ = true;
+					if (tdata.reqs.reqsFulfilling.get(req).size() <= RARE_REQ) {
+						totalScore+=factors.factorWeight.get("MAJOR")*DEFAULT_MAX_SCORE;
+					} else {
+						totalScore+=factors.factorWeight.get("MAJOR")*DEFAULT_MAX_SCORE*3/4;
+					}
+				}
+			}
+		} else {
+			if (factors.factorWeight.get("MAJOR") > 0)
+				totalScore+=factors.factorWeight.get("MAJOR")*c.preScore;
+		}
 		if (c.description.toUpperCase().contains("PREFERENCE TO FRESHMEN") && !data.YEAR.equals("FRESHMAN")) {
 			
 		} else if (c.description.toUpperCase().contains("PREFERENCE TO SOPHOMORES")&& !data.YEAR.equals("SOPHOMORE")) {

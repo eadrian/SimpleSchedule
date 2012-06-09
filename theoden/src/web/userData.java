@@ -510,7 +510,7 @@ public class userData {
         
         
         
-        k.search(u,tdata,"politics", "ALL",f,s);
+        //k.search(u,tdata,"politics", "ALL",f,s);
         
 		System.err.println("Time to search for courses: "+(float)((finish.getTime()-start.getTime())/1000f));
     }
