@@ -32,7 +32,7 @@
       options: {
         date: new Date(),
         timeFormat: null,
-        dateFormat: '',
+        dateFormat: 'M d, Y',
         alwaysDisplayTimeMinutes: true,
         use24Hour: false,
         daysToShow: 5,
@@ -49,7 +49,7 @@
         timeSeparator: ' to ',
         startParam: 'start',
         endParam: 'end',
-        businessHours: {start: 8, end: 18, limitDisplay: false},
+        businessHours: {start: 8, end: 20, limitDisplay: true},
         newEventText: 'New Event',
         timeslotHeight: 20,
         defaultEventLength: 2,
@@ -68,7 +68,7 @@
         allowCalEventOverlap: false,
         overlapEventsSeparate: false,
         totalEventsWidthPercentInOneColumn: 100,
-        readonly: false,
+        readonly: true,
         allowEventCreation: true,
         hourLine: false,
         deletable: function(calEvent, element) {
@@ -2617,7 +2617,8 @@
           return options.getHeaderDate(date, this.element);
         }
         var dayName = options.useShortDayNames ? options.shortDays[date.getDay()] : options.longDays[date.getDay()];
-        return dayName + (options.headerSeparator) + this._formatDate(date, options.dateFormat);
+        //return dayName + (options.headerSeparator) + this._formatDate(date, options.dateFormat);
+        return dayName;
       },
 
 

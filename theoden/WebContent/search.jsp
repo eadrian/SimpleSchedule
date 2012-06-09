@@ -1,9 +1,14 @@
 <jsp:include page="header.jsp">
   <jsp:param name="name" value="sos" />
 </jsp:include>
+<script type="text/javascript">
+	$(document).ready(function() {	
+		$("nav ul li:nth-child(2)").addClass("current");
+	});
+</script>
 <div style="border: 1px solid white; float: left; height: 100%; width: 700px;">
 
-	<div id="search_calendar" style="border: 1px solid white; overflow: scroll; height: 40%">
+	<div id="search_calendar" style="border: 1px solid white; overflow: hidden; height: 40%">
 		<div id="calendarWrapperWrapper">
 			<div id='calendarWrapper'>
 				<div id='calendar'></div>
@@ -28,15 +33,17 @@
 		<% ServletContext sc = getServletContext();
 		List<String> registerErrors = (ArrayList<String>) request.getAttribute("searchResults");
 		Map<String, Course> sortedScores = (Map<String, Course>) request.getAttribute("sortedScores");
-		
 		if (registerErrors != null) {
 			out.println("<h3>Search Results:</h3>");
 			out.println("<ul>");
 			for (String key : sortedScores.keySet()) {
 				Course c = sortedScores.get(key);
-				out.println("<li><strong>" + c.code + ": " + c.title + "</strong>");
+				/*
+				out.println("<span class='descr'>" + c.description + "</span>");
+				out.println("<li><strong>" + c.description + ": " + c.title + "</strong>");
 				out.println("<i>" + c.lectureDays + "</i>");
 				out.println("</li>");
+				*/
 			}
 			out.println("</ul>");
 		} else {

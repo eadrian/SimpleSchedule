@@ -138,9 +138,10 @@ public class Servlet_Search extends HttpServlet {
 		for (Course c : sortedScores) {
 			if (searchResults.contains(c.code))
 				continue;
-			returnedHTML += "<li class='course' onclick='blah()'><strong>" + c.code + ": " + c.title + "</strong>";
+			returnedHTML += "<li class='course'><strong>" + c.code + ": " + c.title + "</strong>";
 			//returnedHTML += "<i>" + c.lectureDays + "</i>";
-			returnedHTML += "<span style='display: none'>" + c.description + "</span>";
+			returnedHTML += "<span style='display: none'><p>" + c.description + "</p></span>";
+			returnedHTML += "<span><p></p></span>";
 			returnedHTML += "</li>";
 			System.out.println(c.code + c.description);
 			searchResults.add(c.code);

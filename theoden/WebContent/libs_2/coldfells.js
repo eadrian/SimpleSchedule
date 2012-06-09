@@ -1,9 +1,13 @@
 var count = 2;
 
-function blah() {
-	$( this ).find('span').show();
-}
 
+
+function blah() {
+	////$('.course > span').show();
+	$( this ).find('span').show();
+	
+}  
+	
 $(document).ready(function() {
 	var $about = $("#about");
 	$("#about_button").click(function() {
@@ -57,12 +61,7 @@ $(document).ready(function() {
 		});
 		// alert("relevance: " + relevance + " level:" + level + "project :" + project); 
 		var query = $("#query").val();
-		$("#search_results").load('Servlet_Search', {"query": query, "relevance": relevance, "interest": interest, "level": level, "work": work, "popularity":popularity, "gers":gers}, function() {
-			$('#search_results li').click(function() {
-				$( this ).find('span').toggle();
-			});
-		});
-
+		$("#search_results").load('Servlet_Search', {"query": query, "relevance": relevance, "interest": interest, "level": level, "work": work, "popularity":popularity, "gers":gers} );
 
 	}
 	$(function() {
@@ -202,8 +201,7 @@ $(document).ready(function() {
 
 	// set up main calendar
     var $calendar = $('#calendar').weekCalendar({
-      timeslotsPerHour: 3,
-      timeslotHeight: 10,
+      timeslotsPerHour: 2,
       scrollToHourMillis : 0,
       height: function($calendar){
         return $(window).height() - $('h1').outerHeight(true);
@@ -229,10 +227,8 @@ $(document).ready(function() {
 			  $event.css('backgroundColor', '#E6AC27');
 		}
       },
-      readonly: true,
-      businessHours: {start: 12, end: 19, limitDisplay: true},
       eventNew : function(calEvent, $event) {
-        alert('eYou\'ve added a new event. You would capture this event, add the logic for creating a new event with your own fields, data and whatever backend persistence you require.');
+        alert('You\'ve added a new event. You would capture this event, add the logic for creating a new event with your own fields, data and whatever backend persistence you require.');
       },
       data: function(start, end, callback) {
         var dataSource = $('#data_source').val();

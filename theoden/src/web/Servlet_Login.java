@@ -65,8 +65,8 @@ public class Servlet_Login extends HttpServlet {
 		} else {								// LOGIN
 			String username = request.getParameter("username");
 			String password = request.getParameter("password");
-			
-			String address = "C:\\Users\\Elliot\\SimpleSchedule\\CourserankConnector\\";
+
+			String address = "C:\\\\Users\\\\Elaine\\Desktop\\galadriel\\CourserankConnector\\";
 			String tagger_address = address + "models/english-left3words-distsim.tagger";
 			MaxentTagger t = null;
 			userData u = null;

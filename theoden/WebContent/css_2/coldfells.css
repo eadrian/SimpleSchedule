@@ -129,10 +129,6 @@ nav li:hover {
 	background: #3E4147;
 }
 
-nav li.current:hover {
-	background: #DFBA69;
-}
-
 li.secondary {
 	font-family: 'Open Sans';
 	background: #3E4147;

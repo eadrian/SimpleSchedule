@@ -35,4 +35,24 @@
     <servlet-name>Servlet_Login</servlet-name>
     <url-pattern>/Servlet_Login</url-pattern>
   </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>Servlet_Schedule</display-name>
+    <servlet-name>Servlet_Schedule</servlet-name>
+    <servlet-class>web.Servlet_Schedule</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Servlet_Schedule</servlet-name>
+    <url-pattern>/Servlet_Schedule</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>Servlet_Sched</display-name>
+    <servlet-name>Servlet_Sched</servlet-name>
+    <servlet-class>web.Servlet_Sched</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Servlet_Sched</servlet-name>
+    <url-pattern>/Servlet_Sched</url-pattern>
+  </servlet-mapping>
 </web-app>
