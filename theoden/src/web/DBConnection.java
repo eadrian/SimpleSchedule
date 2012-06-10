@@ -13,7 +13,7 @@ public class DBConnection {
 	public static final String database = "cdata";
 
 	public Connection con;
-	public static final String sep = "\", \"";
+public static final String sep = "\", \"";
 	
 	//shaewaem
 	public DBConnection() {
@@ -32,6 +32,23 @@ public class DBConnection {
 		
 	public String getCourseAttribute(int courseID, String attribute) {
 		return getAttribute("rhun_courses", courseID, attribute);
+	}
+		
+	public String getCourseAttributeByCode(String code, int ID, String attribute) {
+		try {
+			Statement stmt = con.createStatement();
+			stmt.executeQuery("USE " + database);
+			ResultSet rs = stmt.executeQuery("SELECT * FROM rhun_courses WHERE code = '" + code + "' and ID = " + ID);
+			rs.first();
+			return rs.getString(attribute);
+		} catch (NumberFormatException e) {
+			System.out.println("Not a valid number.");
+			e.printStackTrace();
+		} catch (SQLException e) {
+			System.out.println("Was not able to retrieve attribute by code.");
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	/** GENERAL METHODS **/
@@ -655,6 +672,73 @@ public List<String> getCoursesThatFulfillMR(String reqName) {
 	}
 	return coursesFulfilling;
 }
+
+
+static final String WRITE_OBJECT_SQL = "INSERT INTO cdata.user_data(username, courses) VALUES (?, ?)";
+
+static final String READ_OBJECT_SQL = "SELECT * FROM cdata.user_data WHERE username = ?";
+
+private static String STR_SEP = "RRR";
+
+public void writeJavaObject(String username, ArrayList<String> l1) throws Exception {
+  String className = l1.getClass().getName();
+  PreparedStatement pstmt = con.prepareStatement(WRITE_OBJECT_SQL);
+
+  // set input parameters
+  pstmt.setString(1, username);
+  
+  
+  String list = "";
+  
+  for (int i=0; i < l1.size(); i++) {
+	  list = list + l1.get(i);
+	  if (i < (l1.size()-1)) {
+		  list = list + STR_SEP;
+	  }
+  }
+  
+  pstmt.setString(2, list);
+  pstmt.executeUpdate();
+
+  
+
+  pstmt.close();
+  System.out.println("writeJavaObject: done serializing: " + className);
+  return;
+}
+
+public List<String> readJavaObjectIfPresent(String uname) throws Exception {
+  PreparedStatement pstmt = con.prepareStatement(READ_OBJECT_SQL);
+  pstmt.setString(1, uname);
+  ResultSet rs = pstmt.executeQuery();
+  if (rs.next()) {
+  
+
+	  String l1 = rs.getString("courses");
+	  List<String> l = new ArrayList<String>();
+	  
+	  String[] courses = l1.split(STR_SEP);
+	  for (int i=0; i<courses.length; i++) {
+		  String s = courses[i];
+		  if (!s.equals("")) {
+			  l.add(s);
+		  }
+	  }
+	  
+	  String className = l.getClass().getName();
+	
+	  rs.close();
+	  pstmt.close();
+	  System.out.println("readJavaObject: done de-serializing: " + className);
+	  
+	  return l;
+  } else
+	  return null;
+}
+
+
+
+
 }
 
 	

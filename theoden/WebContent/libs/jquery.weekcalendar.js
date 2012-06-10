@@ -35,7 +35,7 @@
         dateFormat: '',
         alwaysDisplayTimeMinutes: true,
         use24Hour: false,
-        daysToShow: 5,
+        daysToShow: 7,
         minBodyHeight: 100,
         firstDayOfWeek: function(calendar) {
                   if ($(calendar).weekCalendar('option', 'daysToShow') != 5) {

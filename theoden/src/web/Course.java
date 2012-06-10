@@ -101,6 +101,27 @@ public class Course {
 		this.type = dbc.getCourseAttribute(id, "type");
 		this.workload = Integer.parseInt(dbc.getCourseAttribute(id, "workload"));
 	}
+	
+
+	public Course(String code, int ID) {
+		this.ID = ID;
+		this.avgGrade = dbc.getCourseAttributeByCode(code, ID, "avgGrade");
+		this.code = dbc.getCourseAttributeByCode(code, ID, "code");
+		this.deptID = Integer.parseInt(dbc.getCourseAttributeByCode(code, ID, "deptID"));
+		this.description = dbc.getCourseAttributeByCode(code, ID, "description");
+		this.grading = dbc.getCourseAttributeByCode(code, ID, "grading");
+		this.title = dbc.getCourseAttributeByCode(code, ID, "title");
+		this.lectureDays = dbc.getCourseAttributeByCode(code, ID, "lectureDays");
+		this.numReviews = Integer.parseInt(dbc.getCourseAttributeByCode(code, ID, "numReviews"));
+		this.numUnits = Integer.parseInt(dbc.getCourseAttributeByCode(code, ID, "numUnits"));	
+		this.rating = Float.parseFloat(dbc.getCourseAttributeByCode(code, ID, "rating"));
+		this.tags = dbc.getCourseAttributeByCode(code, ID, "tags");
+		this.timeBegin = Integer.parseInt(dbc.getCourseAttributeByCode(code, ID, "timeBegin"));
+		this.timeEnd = Integer.parseInt(dbc.getCourseAttributeByCode(code, ID, "timeEnd"));	
+		this.type = dbc.getCourseAttributeByCode(code, ID, "type");
+		this.workload = Integer.parseInt(dbc.getCourseAttributeByCode(code, ID, "workload"));
+		this.deptCode = dbc.getAttribute("rhun_departments", this.deptID, "code");
+	}
 
 	public Course() {
 		lecturers = new ArrayList<String>();

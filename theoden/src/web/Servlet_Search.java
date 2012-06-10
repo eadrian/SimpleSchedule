@@ -124,7 +124,8 @@ public class Servlet_Search extends HttpServlet {
         TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses, mr);
         
         
-		List<Course> sortedScores = k.search(u,tdata,tdata.reqs,query, "ALL",f,s);
+		//List<Course> sortedScores = k.search(u,tdata,tdata.reqs,query, "ALL",f,s);
+        List<Course> sortedScores = k.search(u,tdata,tdata.reqs,query, "Spring",f,s);
 /*
 		for (Course c : sortedScores) {
 			System.out.println("LALA: " + c.code + " : " + c.description);
@@ -140,8 +141,14 @@ public class Servlet_Search extends HttpServlet {
 				continue;
 			returnedHTML += "<li class='course'><strong>" + c.code + ": " + c.title + "</strong>";
 			//returnedHTML += "<i>" + c.lectureDays + "</i>";
-			returnedHTML += "<span style='display: none'><p>" + c.description + "</p></span>";
-			returnedHTML += "<span><p></p></span>";
+			returnedHTML += "<span class='addCourse'>[add to schedule]</span>";
+			returnedHTML += "<span class='descr' style='display: none'><p>" + c.description + "</p></span>";
+			returnedHTML += "<span class='descr'><p></p></span>";
+			returnedHTML += "<span class='beginTime' style='display: none'>" + c.timeBegin + "</span>";
+			returnedHTML += "<span class='endTime' style='display: none'>" + c.timeEnd + "</span>";
+			returnedHTML += "<span class='lectureDays' style='display: none'>" + c.lectureDays + "</span>";
+			returnedHTML += "<span class='code' style='display: none'>" + c.code + "</span>";
+			returnedHTML += "<span class='id' style='display: none'>" + c.ID + "</span>";
 			returnedHTML += "</li>";
 			System.out.println(c.code + c.description);
 			searchResults.add(c.code);

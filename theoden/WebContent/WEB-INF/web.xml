@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" id="WebApp_ID" version="2.5">
-  <display-name>aragorn</display-name>
+  <display-name>theoden8</display-name>
   <welcome-file-list>
     <welcome-file>index.html</welcome-file>
     <welcome-file>index.htm</welcome-file>
@@ -54,5 +54,15 @@
   <servlet-mapping>
     <servlet-name>Servlet_Sched</servlet-name>
     <url-pattern>/Servlet_Sched</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>Servlet_AddCourse</display-name>
+    <servlet-name>Servlet_AddCourse</servlet-name>
+    <servlet-class>web.Servlet_AddCourse</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Servlet_AddCourse</servlet-name>
+    <url-pattern>/Servlet_AddCourse</url-pattern>
   </servlet-mapping>
 </web-app>

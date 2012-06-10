@@ -46,7 +46,7 @@ var allSchedules = [
   			for (int j = 0; j < 5; j++) {			// for each day
   				if (ch[j] == '0') continue;
   				String shift = "";
-  				if (dayOfWeek == 1) shift = "+ " + j + 1;		// sunday
+  				if (dayOfWeek == 1) shift = "+ " + j + "+1";		// sunday
   				if (dayOfWeek == 2) shift = "+ " + j;			// monday
   				if (dayOfWeek == 3) shift = "+" + j + "-1";		// tues
   				if (dayOfWeek == 4) shift = "+" + j + "-2";		// wed
@@ -54,11 +54,33 @@ var allSchedules = [
   				if (dayOfWeek == 6) shift = "+" + j + "-4";		// fri
   				if (dayOfWeek == 7) shift = "+" + j + "-5";		// sat
   	  	  	  	newItem += "{'id':" + itemCount + ", 'start': new Date(year, month, day" + shift + ", " + c.timeBegin/100 + ", " + c.timeBegin%100 + "), ";
-  	  	  	  	newItem += "'end': new Date(year, month, day" + shift + ", " + c.timeEnd/100 + ", " + c.timeBegin%100 + "), ";
+  	  	  	  	newItem += "'end': new Date(year, month, day" + shift + ", " + c.timeEnd/100 + ", " + c.timeEnd%100 + "), ";
   	  	  	  	newItem += "'title': '" + c.code + "'},";
   	  			itemCount++;  				
   			}
   		}
+  		/**List<Course> addedCourses = (List<Course>) session.getAttribute("addedCourses");
+  		if (addedCourses != null) {
+  			for (Course c : addedCourses) {						// for each course
+  			
+  				char[] ch = (c.lectureDays).toCharArray();
+	  			for (int j = 0; j < 5; j++) {			// for each day
+	  				if (ch[j] == '0') continue;
+	  				String shift = "";
+	  				if (dayOfWeek == 1) shift = "+ " + j + "+1";		// sunday
+	  				if (dayOfWeek == 2) shift = "+ " + j;			// monday
+	  				if (dayOfWeek == 3) shift = "+" + j + "-1";		// tues
+	  				if (dayOfWeek == 4) shift = "+" + j + "-2";		// wed
+	  				if (dayOfWeek == 5) shift = "+" + j + "-3";		// thu
+	  				if (dayOfWeek == 6) shift = "+" + j + "-4";		// fri
+	  				if (dayOfWeek == 7) shift = "+" + j + "-5";		// sat
+	  	  	  	  	newItem += "{'id':" + itemCount + ", 'start': new Date(year, month, day" + shift + ", " + c.timeBegin/100 + ", " + c.timeBegin%100 + "), ";
+	  	  	  	  	newItem += "'end': new Date(year, month, day" + shift + ", " + c.timeEnd/100 + ", " + c.timeEnd%100 + "), ";
+	  	  	  	  	newItem += "'title': '" + c.code + "'},";
+	  	  			itemCount++;  				
+	  			}
+  			}
+  		}**/
   		newItem += "]},";
   		count++;
   	  	out.println(newItem);
@@ -94,7 +116,7 @@ function drawCalendarThumb(calendarID, eventData) {
 		timeslotsPerHour: 2,
 		scrollToHourMillis : 0,
 		timeslotHeight: 4,
-        daysToShow: 5,
+        daysToShow: 7,
         businessHours: {start: 10, end: 16, limitDisplay: true},
 		height: function($calendar){
 			return $(window).height() - $('h1').outerHeight(true);

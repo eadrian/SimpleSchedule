@@ -74,6 +74,8 @@ public class Servlet_Sched extends HttpServlet {
 	        
 	        Schedule s = new Schedule();
 	        
+			
+	        
 	        // get xed out blocks
 	        String dayStr = request.getParameter("blockDay");
 	        String startStr = request.getParameter("blockStart");
@@ -88,7 +90,8 @@ public class Servlet_Sched extends HttpServlet {
 				// block out
 				String dayString = "00000";
 				StringBuffer buf = new StringBuffer( dayString );
-				buf.setCharAt( day - 1, '1' );
+				//buf.setCharAt( day - 1, '1' );
+				buf.setCharAt( day-1, '1' );
 				dayString = buf.toString( );
 				s.addItem("BLOCK", dayString, startTime, endTime);
 	        }
@@ -182,6 +185,17 @@ public class Servlet_Sched extends HttpServlet {
 	        }
 	        
 	        TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses, mr);
+	        
+	        // add courses
+			List<Course> addedCourses = (List<Course>) session.getAttribute("addedCourses");
+			if (addedCourses != null) {
+				for (Course c : addedCourses) {	
+					System.out.println("adding item" + c.code + c.lectureDays);
+					//s.addItem(c.code, c.lectureDays, c.timeBegin, c.timeEnd);
+					tdata.addCourse(c);
+				}
+			}
+	        
 	        
 	        //GET THE SCHEDULES
 	        List<List<Course>> results = sf.getRandSchedules(u, tdata, f, "Spring", 2012, 10);
