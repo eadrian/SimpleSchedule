@@ -66,7 +66,7 @@ public class Servlet_Login extends HttpServlet {
 			String username = request.getParameter("username");
 			String password = request.getParameter("password");
 
-			String address = "C:\\\\Users\\\\Elaine\\Desktop\\galadriel\\CourserankConnector\\";
+			String address = "C:\\Users\\Elliot\\SimpleSchedule\\CourserankConnector\\";
 			String tagger_address = address + "models/english-left3words-distsim.tagger";
 			MaxentTagger t = null;
 			userData u = null;
@@ -142,7 +142,7 @@ public class Servlet_Login extends HttpServlet {
 	        TransientData tdata = new TransientData(u,s,new ArrayList<Course>(),barredCourses, mr);
 	        tdata.barredCourses.add("CS 101");
 	        //GET THE SCHEDULES
-	        Date start = new Date();
+	        /*Date start = new Date();
 	        List<List<Course>> results = sf.getRandSchedules(u, tdata, f, "Spring", 2012, 10);
 	        
 	        Date finish = new Date();

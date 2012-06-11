@@ -46,7 +46,7 @@ public class Servlet_Sched extends HttpServlet {
 		HttpSession session = request.getSession();	
 		
 		// change this to the location of your tagger
-		String address = "C:\\\\Users\\\\Elaine\\Desktop\\galadriel\\CourserankConnector\\";
+		String address = "C:\\Users\\Elliot\\SimpleSchedule\\CourserankConnector\\";
 		String tagger_address = address + "models/english-left3words-distsim.tagger";
 		MaxentTagger t = null;
 		userData u = null;
@@ -73,7 +73,10 @@ public class Servlet_Sched extends HttpServlet {
 	        ScheduleFiller sf = new ScheduleFiller();
 	        
 	        Schedule s = new Schedule();
-	        
+	        s = (Schedule) session.getAttribute("BlockSched");
+	        if (s == null) {
+	        	s = new Schedule();
+	        }
 			
 	        
 	        // get xed out blocks
@@ -93,14 +96,18 @@ public class Servlet_Sched extends HttpServlet {
 				//buf.setCharAt( day - 1, '1' );
 				buf.setCharAt( day-1, '1' );
 				dayString = buf.toString( );
-				s.addItem("BLOCK", dayString, startTime, endTime);
+				if (s.addItem("BLOCK", dayString, startTime, endTime))
+					System.out.println("Added block");
+				else
+					System.out.println("Failed to add");
 	        }
+	        System.out.println("BLOCKS: "+s.items);
 	        //s.addItem("CS244", "01010", 1250, 1405);
 	        //s.addItem("No Fridays", "00001", 0, 2400);
 	        //s.addItem("ALLTIME", "11111", 0, 2400);
 	        
-
-	        
+	        session.setAttribute("BlockSched", s);
+	        request.setAttribute("BlockSched", s);
 	        // get factors
 	        int relevance = 0;
 			int interest = 0;
@@ -139,7 +146,7 @@ public class Servlet_Sched extends HttpServlet {
 	        f.setFactor("WORK", .5f+((float)3*work/6));
 	        f.setFactor("POPULARITY", .5f+((float)3*popularity/6));
 	        f.setFactor("GERS", .5f+((float)3*gers/6));
-	        f.setFactor("MAJOR", .5f+((float)3*major/6));
+	        //f.setFactor("MAJOR", .5f+((float)3*major/6));
 	        f.setFactor("TOTAL", (float) 1.5);
 	        f.setFactor("PROJECT", 1);
 	        f.setFactor("INDEPENDENT", 1);

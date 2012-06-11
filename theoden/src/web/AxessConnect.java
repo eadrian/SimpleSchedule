@@ -49,12 +49,12 @@ public class AxessConnect {
 	
     public List<String> getCourses() throws Exception {
     	
-    	/*List<String> checkResults = dbc.readJavaObjectIfPresent(uname);
+    	List<String> checkResults = dbc.readJavaObjectIfPresent(uname);
     	if (checkResults!=null) {
     		System.out.println("SUCCESS, don't need to login remotely");
     		return checkResults;
     	}
-    	*/
+    	
     	
     	
     	List<String> coursesTaken = new ArrayList<String>();
@@ -241,7 +241,7 @@ public class AxessConnect {
             	System.out.println(years);
             	coursesTaken.add(cname+" : "+title+SEPARATOR+years);
             }
-            //dbc.writeJavaObject(uname,(ArrayList<String>) coursesTaken);
+            dbc.writeJavaObject(uname,(ArrayList<String>) coursesTaken);
             return coursesTaken;
             
         } finally {

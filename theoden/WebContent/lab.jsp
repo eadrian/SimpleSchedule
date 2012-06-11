@@ -5,6 +5,11 @@
 	ServletContext sc = getServletContext();
 
 	List<List<Course>> results = (List<List<Course>>) request.getAttribute("scheduleResults");
+	Schedule bs =(Schedule) request.getAttribute("BlockSched");
+	for (int i=0; i<bs.items.size(); i++) {
+		scheduleItem si = bs.items.get(i);
+		System.out.println("BLOCKED:    "+si.name+": "+si.days+ " : "+si.start);
+	}
 	String returnedHTML = "";
 	for (List<Course> lc : results) {
 		returnedHTML += "<ul>";
@@ -55,7 +60,30 @@ var allSchedules = [
   				if (dayOfWeek == 7) shift = "+" + j + "-5";		// sat
   	  	  	  	newItem += "{'id':" + itemCount + ", 'start': new Date(year, month, day" + shift + ", " + c.timeBegin/100 + ", " + c.timeBegin%100 + "), ";
   	  	  	  	newItem += "'end': new Date(year, month, day" + shift + ", " + c.timeEnd/100 + ", " + c.timeEnd%100 + "), ";
+  	  	  	  	String etitle = new String(c.title.replace("'", ""));
+  	  	  		newItem += "'name': '" + etitle + "',";
   	  	  	  	newItem += "'title': '" + c.code + "'},";
+  	  			itemCount++;  				
+  			}
+  		}
+  		
+  		for (int i =0; i<bs.items.size(); i++) {
+  			scheduleItem si = bs.items.get(i);
+  			char[] ch = (si.days).toCharArray();
+  			for (int j = 0; j < 5; j++) {			// for each day
+  				if (ch[j] == '0') continue;
+  				String shift = "";
+  				if (dayOfWeek == 1) shift = "+ " + j + "+1";		// sunday
+  				if (dayOfWeek == 2) shift = "+ " + j;			// monday
+  				if (dayOfWeek == 3) shift = "+" + j + "-1";		// tues
+  				if (dayOfWeek == 4) shift = "+" + j + "-2";		// wed
+  				if (dayOfWeek == 5) shift = "+" + j + "-3";		// thu
+  				if (dayOfWeek == 6) shift = "+" + j + "-4";		// fri
+  				if (dayOfWeek == 7) shift = "+" + j + "-5";		// sat
+  	  	  	  	newItem += "{'id':" + itemCount + ", 'start': new Date(year, month, day" + shift + ", " + si.start/100 + ", " + si.start%100 + "), ";
+  	  	  	  	newItem += "'end': new Date(year, month, day" + shift + ", " + si.end/100 + ", " + si.end%100 + "), ";
+  	  	  		newItem += "'name': '" + "" + "',";
+  	  	  	  	newItem += "'title': '" + "BLOCK" + "'},";
   	  			itemCount++;  				
   			}
   		}
@@ -81,10 +109,14 @@ var allSchedules = [
 	  			}
   			}
   		}**/
+  		
+  		
   		newItem += "]},";
   		count++;
   	  	out.println(newItem);
   	}
+  	
+  	
     %>
     /*
 	{ 'id': 'calendar_0', 'dates': [
@@ -186,7 +218,10 @@ $(document).ready(function() {
 		        	break;
 		        }
 		    }
-		    if (!found) {
+		    if (calEvent.title == "BLOCK") {
+				$event.css('backgroundColor', 'red');
+				return;
+			} else if (!found) {
 		    	colorkeeper.push(calEvent.title);
 				switch(colorkeeper.length) {
 					case 1: 
@@ -273,7 +308,7 @@ $(document).ready(function() {
 
 						$('#scheduleForm').submit();
 						// $calendar.weekCalendar("removeUnsavedEvents");
-						// $calendar.weekCalendar("updateEvent", calEvent);
+						//$calendar.weekCalendar("updateEvent", calEvent);
 				   },
 				   cancel : function() {
 						$event.remove();
@@ -304,7 +339,7 @@ $(document).ready(function() {
 			var titleField = $dialogContent.find("input[name='title']").val(calEvent.title);
 			var bodyField = $dialogContent.find("textarea[name='body']");
 			bodyField.val(calEvent.body);
-
+			
 			$dialogContent.dialog({
 				modal: true,
 				title: "Course: " + calEvent.title,
@@ -325,14 +360,18 @@ $(document).ready(function() {
 						
 						$event.remove();
 					  //$calendar.weekCalendar("removeEvent", calEvent.id);
+					   $dialogContent.find('span').remove();
 					  $dialogContent.dialog("close");
 				   },
 				   cancel : function() {
+					  $dialogContent.find('span').remove();
 					  $dialogContent.dialog("close");
 				   }
 				}
 			}).show();
-
+			if (calEvent.title != "BLOCK") {
+				$dialogContent.append("<span>"+calEvent.name+"</span>");
+			}
 			 var startField = $dialogContent.find("select[name='start']").val(calEvent.start);
 			 var endField = $dialogContent.find("select[name='end']").val(calEvent.end);
 			 $dialogContent.find(".date_holder").text($calendar.weekCalendar("formatDate", calEvent.start));
