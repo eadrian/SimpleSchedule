@@ -10,9 +10,7 @@ if (addedCourses == null) {
 	List<Course> newAddedCourses = new ArrayList<Course>(); 
 	session.setAttribute("addedCourses", newAddedCourses);
 	addedCourses = (List<Course>) session.getAttribute("addedCourses");
-} else {
-	System.out.println("not null");
-}
+} 
 %>
 <script type="text/javascript">
 var count = 2;
@@ -106,12 +104,13 @@ $(document).ready(function() {
 		eventDelete: function(calEvent, $event) {
 			alert("deleting");
 		},
+		readonly: true,
 		resizable: function(calEvent, $event) {
 			return false;
 		},
 		timeslotsPerHour: 2,
 		timeslotHeight: 10,
-        allowEventCreation: true,
+        allowEventCreation: false,
 		eventRender : function(calEvent, $event) {
 			switch(calEvent.id) {
 				/*
@@ -345,6 +344,7 @@ $(document).ready(function() {
 		var work = 0;
 		var popularity = 0;
 		var gers = 0;
+		var major = 0;
 		
 		/** gets factor numbers **/
 		var len = orderedFactors.length;
@@ -355,6 +355,7 @@ $(document).ready(function() {
 		   if (orderedFactors[i] == 'WORK') work = (len - i);
 		   if (orderedFactors[i] == 'POPULARITY') popularity = (len - i);
 		   if (orderedFactors[i] == 'GERS') gers = (len - i);
+		   if (orderedFactors[i] == 'MAJOR') major = (len - i);
 		}
 		/** filters out the unchecked factors **/
 		$('#sortable li').each(function(index) {
@@ -366,11 +367,12 @@ $(document).ready(function() {
 			   if (factor_id == 'WORK') work = 0;
 			   if (factor_id == 'POPULARITY') popularity = 0;
 			   if (factor_id == 'GERS') gers = 0;
+			   if (factor_id == 'MAJOR') major = 0;
 			}
 		});
 		// alert("relevance: " + relevance + " level:" + level + "project :" + project); 
 		var query = $("#query").val();
-		$("#search_results").load('Servlet_Search', {"query": query, "relevance": relevance, "interest": interest, "level": level, "work": work, "popularity":popularity, "gers":gers}, function() {
+		$("#search_results").load('Servlet_Search', {"query": query, "relevance": relevance, "interest": interest, "level": level, "work": work, "popularity":popularity, "gers":gers, "major":major}, function() {
 			$('#search_results li').click(function() {
 				$( this ).find('span.descr').toggle();
 			});		

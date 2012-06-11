@@ -68,6 +68,7 @@
 			var work = 0;
 			var popularity = 0;
 			var gers = 0;
+			var major = 0;
 			
 			/** gets factor numbers **/
 			var len = orderedFactors.length;
@@ -78,6 +79,7 @@
 			   if (orderedFactors[i] == 'WORK') work = (len - i);
 			   if (orderedFactors[i] == 'POPULARITY') popularity = (len - i);
 			   if (orderedFactors[i] == 'GERS') gers = (len - i);
+			   if (orderedFactors[i] == 'MAJOR') major = (len - i);
 			}
 			/** filters out the unchecked factors **/
 			$('#sortable li').each(function(index) {
@@ -89,6 +91,7 @@
 				   if (factor_id == 'WORK') work = 0;
 				   if (factor_id == 'POPULARITY') popularity = 0;
 				   if (factor_id == 'GERS') gers = 0;
+				   if (factor_id == 'MAJOR') major = 0;
 				}
 			});
 			
@@ -99,6 +102,7 @@
 			$('#scheduleForm #work').val(work);
 			$('#scheduleForm #popularity').val(popularity);
 			$('#scheduleForm #gers').val(gers);
+			$('#scheduleForm #major').val(major);
 			
 			$('#scheduleForm').submit();
 		}
@@ -135,6 +139,7 @@
 
 <body> 
 
+<input id="curPage" value="schedule" type="hidden" />
 <div id="debugging" style="background: #2e2e2e; height: auto; color: white; z-index: 1000; position: absolute; top: 0; left: 200px; width: 200px;">
 	<span class="collapse">Collapse</span>
 	<span class="expand">Expand</span>
@@ -159,6 +164,7 @@
 		<input type="hidden" name="work" id="work" />
 		<input type="hidden" name="popularity" id="popularity"  />
 		<input type="hidden" name="gers" id="gers" />
+		<input type="hidden" name="major" id="major" />
 		
 		<!-- x out blocks -->
 		<input type="hidden" name="blockCourse" id="blockCourse"  />

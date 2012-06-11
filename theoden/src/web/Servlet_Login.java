@@ -66,7 +66,7 @@ public class Servlet_Login extends HttpServlet {
 			String username = request.getParameter("username");
 			String password = request.getParameter("password");
 
-			String address = "C:\\Users\\Elliot\\SimpleSchedule\\CourserankConnector\\";
+			String address = "C:\\\\Users\\\\Elaine\\Desktop\\galadriel\\CourserankConnector\\";
 			String tagger_address = address + "models/english-left3words-distsim.tagger";
 			MaxentTagger t = null;
 			userData u = null;
@@ -118,7 +118,11 @@ public class Servlet_Login extends HttpServlet {
 	        barredCourses.add("ENGR 70B");
 	        barredCourses.add("CS 105");
 	        //u.removeGER("ECGender");
-	        
+
+	        String track = "Unspecialized";			// Default					
+			if (session.getAttribute("track") != null) {
+				track = (String) session.getAttribute("track");
+			}
 	        
 	        MajorReqs mr = new MajorReqs("Systems", u);  // major requirements
 	        //mr.removeCourse("ENGR 14");

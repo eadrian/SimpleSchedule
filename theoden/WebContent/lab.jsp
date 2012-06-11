@@ -149,6 +149,8 @@ $(document).ready(function() {
 		drawCalendarThumb(schedule['id'], eventData);
 	}
 
+	var colorkeeper = new Array();
+	var curColor = "#BF4D28";
 	
 	// set up main calendar
 	var $calendar = $('#calendar').weekCalendar({
@@ -162,6 +164,7 @@ $(document).ready(function() {
         businessHours: {start: 8, end: 20, limitDisplay: true},
         allowCalEventOverlap : true,
         overlapEventsSeparate: true,
+        daysToShow: 7,
 		eventDelete: function(calEvent, $event) {
 			alert("deleting");
 		},
@@ -171,9 +174,46 @@ $(document).ready(function() {
 		timeslotsPerHour: 2,
 		timeslotHeight: 20,
         allowEventCreation: true,
+        calendarAfterLoad: function(calendar) {
+        	colorkeeper = [];
+        },
 		eventRender : function(calEvent, $event) {
+			var eventColor = "#BF4D28";
+			var found = false;
+		    for(var i=0; i<colorkeeper.length; i++) {
+		        if (colorkeeper[i] == calEvent.title) {
+		        	found = true;
+		        	break;
+		        }
+		    }
+		    if (!found) {
+		    	colorkeeper.push(calEvent.title);
+				switch(colorkeeper.length) {
+					case 1: 
+						curColor = '#BF4D28';
+					  break;
+					case 2: 
+						curColor = '#E6AC27';
+					  break;
+					case 3:
+						curColor = '#80BCA3';
+					  break;
+					case 4:
+						curColor = '#655643';
+					  break;
+					case 5:
+						curColor = '#4D7891';
+					  break;
+					case 5:
+						curColor = '#548024';
+					  break;
+					default: 
+						curColor = '#3D90AA';
+				}
+		    }
+			$event.css('backgroundColor', curColor);
+			/*
 			switch(calEvent.id) {
-				/*
 				case 1: 
 				  $event.css('backgroundColor', '#BF4D28');
 				  break;
@@ -189,10 +229,10 @@ $(document).ready(function() {
 				case 5:
 				  $event.css('backgroundColor', '#655643');
 				  break;
-				  */
 				default: 
 				  $event.css('backgroundColor', '#3D90AA');
 			}
+			*/
 		},
 		eventNew : function(calEvent, $event) {
 			//alert('You\'ve added a new event. You would capture this event, add the logic for creating a new event with your own fields, data and whatever backend persistence you require.');
@@ -226,6 +266,7 @@ $(document).ready(function() {
 						//calEvent.body = bodyField.val();
 						var startTime = parseInt(start.getHours())*100 + parseInt(start.getMinutes());
 						var endTime = parseInt(end.getHours())*100 + parseInt(end.getMinutes());
+						if ((start.getDay() == 0) || (start.getDay() == 6)) return;
 						$('#scheduleForm #blockDay').val(start.getDay());
 						$('#scheduleForm #blockStart').val(startTime);
 						$('#scheduleForm #blockEnd').val(endTime);

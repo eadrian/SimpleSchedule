@@ -108,6 +108,7 @@ public class Servlet_Sched extends HttpServlet {
 			int work = 0;
 			int popularity = 0;
 			int gers = 0;
+			int major = 0;
 	        if ((request.getParameter("relevance") != null) && (!request.getParameter("relevance").equals(""))) {
 	        	relevance = Integer.parseInt(request.getParameter("relevance"));
 				interest = Integer.parseInt(request.getParameter("interest"));
@@ -115,6 +116,7 @@ public class Servlet_Sched extends HttpServlet {
 				work = Integer.parseInt(request.getParameter("work"));
 				popularity = Integer.parseInt(request.getParameter("popularity"));
 				gers = Integer.parseInt(request.getParameter("gers"));
+				major = Integer.parseInt(request.getParameter("major"));
 	        }
 			
 			
@@ -137,6 +139,7 @@ public class Servlet_Sched extends HttpServlet {
 	        f.setFactor("WORK", .5f+((float)3*work/6));
 	        f.setFactor("POPULARITY", .5f+((float)3*popularity/6));
 	        f.setFactor("GERS", .5f+((float)3*gers/6));
+	        f.setFactor("MAJOR", .5f+((float)3*major/6));
 	        f.setFactor("TOTAL", (float) 1.5);
 	        f.setFactor("PROJECT", 1);
 	        f.setFactor("INDEPENDENT", 1);
@@ -170,7 +173,11 @@ public class Servlet_Sched extends HttpServlet {
 	        
 	        
 	        // Major Reqs
-	        MajorReqs mr = new MajorReqs("Systems", u);  // major requirements
+	        String track = "Unspecialized";			// Default					
+			if (session.getAttribute("track") != null) {
+				track = (String) session.getAttribute("track");
+			}
+	        MajorReqs mr = new MajorReqs(track, u);  // major requirements
 	        //mr.removeCourse("ENGR 14");
 	        //mr.printReqs();
 	        /*if (true)

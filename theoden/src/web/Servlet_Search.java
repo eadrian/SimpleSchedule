@@ -78,6 +78,7 @@ public class Servlet_Search extends HttpServlet {
 		int work = Integer.parseInt(request.getParameter("work"));
 		int popularity = Integer.parseInt(request.getParameter("popularity"));
 		int gers = Integer.parseInt(request.getParameter("gers"));
+		int major = Integer.parseInt(request.getParameter("major"));
 		
 		
 		// start key word search
@@ -94,6 +95,7 @@ public class Servlet_Search extends HttpServlet {
         f.setFactor("WORK", .5f+((float)3*work/6));
         f.setFactor("POPULARITY", .5f+((float)3*popularity/6));
         f.setFactor("GERS", .5f+((float)3*gers/6));
+        f.setFactor("MAJOR", .5f+((float)3*major/6));
         f.setFactor("TOTAL", (float) 1.5);
         f.setFactor("PROJECT", 1);
         f.setFactor("INDEPENDENT", 1);

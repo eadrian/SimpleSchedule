@@ -65,4 +65,14 @@
     <servlet-name>Servlet_AddCourse</servlet-name>
     <url-pattern>/Servlet_AddCourse</url-pattern>
   </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>Servlet_ChangeTrack</display-name>
+    <servlet-name>Servlet_ChangeTrack</servlet-name>
+    <servlet-class>web.Servlet_ChangeTrack</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Servlet_ChangeTrack</servlet-name>
+    <url-pattern>/Servlet_ChangeTrack</url-pattern>
+  </servlet-mapping>
 </web-app>

@@ -8,9 +8,9 @@ public class DBConnection {
 
 
 	private static final String account = "root";
-	private static final String password = "trespass";
+	private static final String password = "";
 	private static final String server = "localhost";
-	public static final String database = "cdata";
+	public static final String database = "rhun";
 
 	public Connection con;
 public static final String sep = "\", \"";

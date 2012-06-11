@@ -38,12 +38,15 @@
    </script>
 </head>
 <body> 
+<input id="curPage" value="search" type="hidden" />
 	<jsp:include page="includes/nav.jsp"></jsp:include>	
 <script type="text/javascript">
 	$(document).ready(function() {	
 		$("nav ul li:nth-child(2)").addClass("current");
 	});
 </script>
+
+
 <div style="border: 1px solid white; float: left; height: 100%; width: 700px;">
 
 	<div id="search_calendar" style="border: 1px solid white; overflow: hidden; height: 40%">

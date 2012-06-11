@@ -29,7 +29,7 @@ if ((action != null) && action.equals("logout")) {
 <body> 
 	<nav>
 		<article>
-			<h1>Simple Schedule</h1>
+			<h1>T H E O D E N</h1>
 			<h6>&#151; Stanford &#151;</h6>
 		</article>
 	</nav>
